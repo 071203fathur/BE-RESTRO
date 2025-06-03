@@ -1,0 +1,10 @@
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.env
+# migrations/ # Biasanya dilacak, tapi bisa diabaikan jika mau
+instance/
+.DS_Store
+*.sqlite3
