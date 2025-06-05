@@ -1,10 +1,27 @@
+# BE-RESTRO/.gitignore
+
 venv/
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
-.env
-# migrations/ # Biasanya dilacak, tapi bisa diabaikan jika mau
-instance/
-.DS_Store
 *.sqlite3
+instance/
+.webassets-cache/
+.sass-cache/
+*.log
+*.pot
+*.mo
+
+# Environment variables
+.env
+.flaskenv
+
+# IDE specific files
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
