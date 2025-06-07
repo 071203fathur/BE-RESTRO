@@ -15,6 +15,7 @@ class ProgramStatus(str, enum.Enum):
     DIBATALKAN = "dibatalkan"
 
 # --- Model User ---
+#asdasd
 class AppUser(db.Model):
     # 2. Nama tabel diubah menjadi 'app_users' untuk menghindari konflik
     __tablename__ = 'app_users'
