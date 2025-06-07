@@ -87,15 +87,15 @@ def register_pasien():
     if not all([username, nama_lengkap, email, password]):
         return jsonify({"msg": "Semua field (username, nama_lengkap, email, password) harus diisi"}), 400
 
-    if User.query.filter_by(username=username).first():
+    if AppUser.query.filter_by(username=username).first():
         return jsonify({"msg": "Username sudah terdaftar"}), 409
-    if User.query.filter_by(email=email).first():
+    if AppUser.query.filter_by(email=email).first():
         return jsonify({"msg": "Email sudah terdaftar"}), 409
     if nomor_telepon and PatientProfile.query.filter_by(nomor_telepon=nomor_telepon).first():
         return jsonify({"msg": "Nomor telepon sudah terdaftar"}), 409
 
 
-    new_pasien_user = User(
+    new_pasien_user = AppUser(
         username=username,
         nama_lengkap=nama_lengkap,
         email=email,
@@ -158,5 +158,5 @@ def logout():
     # Implementasi blocklist token akan lebih aman, tapi memerlukan setup tambahan (misal dengan Redis).
     # Untuk saat ini, client bertanggung jawab menghapus token.
     current_user_identity = get_jwt_identity()
-    return jsonify(msg=f"User '{current_user_identity.get('username')}' logged out. Harap hapus token di sisi client."), 200
+    return jsonify(msg=f"AppUser '{current_user_identity.get('username')}' logged out. Harap hapus token di sisi client."), 200
 

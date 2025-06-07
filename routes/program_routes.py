@@ -1,6 +1,6 @@
 # BE-RESTRO/routes/program_routes.py
 from flask import Blueprint, request, jsonify
-from models import db, User, Gerakan, ProgramRehabilitasi, ProgramGerakanDetail, ProgramStatus
+from models import db, AppUser, Gerakan, ProgramRehabilitasi, ProgramGerakanDetail, ProgramStatus
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from datetime import date, datetime
 
@@ -13,7 +13,7 @@ def get_pasien_list_for_terapis():
     if current_user_identity.get('role') != 'terapis':
         return jsonify({"msg": "Akses ditolak"}), 403
     
-    pasien_list = User.query.filter_by(role='pasien').order_by(User.nama_lengkap.asc()).all()
+    pasien_list = AppUser.query.filter_by(role='pasien').order_by(AppUser.nama_lengkap.asc()).all()
     return jsonify([p.serialize_basic() for p in pasien_list]), 200
 
 
@@ -35,7 +35,7 @@ def create_and_assign_program():
     if not all([nama_program, pasien_id, list_gerakan_input]):
         return jsonify({"msg": "Nama program, ID pasien, dan daftar gerakan wajib diisi"}), 400
     
-    pasien = User.query.filter_by(id=pasien_id, role='pasien').first_or_404("Pasien tidak ditemukan.")
+    pasien = AppUser.query.filter_by(id=pasien_id, role='pasien').first_or_404("Pasien tidak ditemukan.")
 
     try:
         tanggal_program = datetime.strptime(tanggal_program_str, '%Y-%m-%d').date() if tanggal_program_str else date.today()

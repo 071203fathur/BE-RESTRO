@@ -1,6 +1,6 @@
 # BE-RESTRO/routes/laporan_routes.py
 from flask import Blueprint, request, jsonify
-from models import db, User, ProgramRehabilitasi, LaporanRehabilitasi, LaporanGerakanHasil, ProgramStatus, ProgramGerakanDetail
+from models import db, AppUser, ProgramRehabilitasi, LaporanRehabilitasi, LaporanGerakanHasil, ProgramStatus, ProgramGerakanDetail
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from datetime import datetime, date
 

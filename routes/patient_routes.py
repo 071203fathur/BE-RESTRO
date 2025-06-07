@@ -1,7 +1,7 @@
 # BE-RESTRO/routes/patient_routes.py
 
 from flask import Blueprint, request, jsonify, current_app
-from models import User, PatientProfile, db
+from models import AppUser, PatientProfile, db
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from datetime import datetime
 from utils.azure_helpers import upload_file_to_blob, delete_blob
@@ -27,10 +27,10 @@ def update_patient_profile():
         return jsonify({"msg": "Akses ditolak"}), 403
 
     user_id = current_user_identity['id']
-    user = User.query.get(user_id)
+    user = AppUser.query.get(user_id)
     patient_profile = PatientProfile.query.filter_by(user_id=user_id).first()
     if not user or not patient_profile:
-        return jsonify({"msg": "User atau profil pasien tidak ditemukan"}), 404
+        return jsonify({"msg": "AppUser atau profil pasien tidak ditemukan"}), 404
 
     data = request.get_json()
     if not data:

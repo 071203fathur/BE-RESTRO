@@ -1,7 +1,7 @@
 # BE-RESTRO/routes/gerakan_routes.py
 
 from flask import Blueprint, request, jsonify, current_app
-from models import db, Gerakan, User
+from models import db, Gerakan, AppUser
 from flask_jwt_extended import jwt_required, get_jwt_identity
 # Import helper Azure kita
 from utils.azure_helpers import upload_file_to_blob, delete_blob

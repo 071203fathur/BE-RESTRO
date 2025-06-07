@@ -1,7 +1,7 @@
 # BE-RESTRO/routes/terapis_routes.py
 
 from flask import Blueprint, jsonify
-from models import db, User, PatientProfile, ProgramRehabilitasi, ProgramStatus
+from models import db, AppUser, PatientProfile, ProgramRehabilitasi, ProgramStatus
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from sqlalchemy import func, distinct
 from datetime import date, timedelta, datetime
@@ -21,7 +21,7 @@ def get_my_patients_details():
     terapis_id = current_user_identity.get('id')
 
     # Query untuk mendapatkan objek User dari pasien yang pernah di-assign program oleh terapis ini
-    assigned_patients = User.query.join(ProgramRehabilitasi, User.id == ProgramRehabilitasi.pasien_id)\
+    assigned_patients = AppUser.query.join(ProgramRehabilitasi, AppUser.id == ProgramRehabilitasi.pasien_id)\
         .filter(ProgramRehabilitasi.terapis_id == terapis_id)\
         .distinct().all()
     

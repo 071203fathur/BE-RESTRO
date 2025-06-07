@@ -1,7 +1,7 @@
 # BE-RESTRO/routes/monitoring_routes.py
 
 from flask import Blueprint, jsonify, current_app
-from models import db, User, PatientProfile, LaporanRehabilitasi, LaporanGerakanHasil, ProgramRehabilitasi, ProgramStatus
+from models import db, AppUser, PatientProfile, LaporanRehabilitasi, LaporanGerakanHasil, ProgramRehabilitasi, ProgramStatus
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from sqlalchemy import func, cast, Date as SQLDate # Import SQLDate untuk casting
 from datetime import date, timedelta, datetime
@@ -22,7 +22,7 @@ def get_pasien_monitoring_summary(pasien_id): # Nama fungsi lebih spesifik
     user_role = current_user_identity.get('role')
     requesting_user_id = current_user_identity.get('id')
     
-    pasien = User.query.get(pasien_id)
+    pasien = AppUser.query.get(pasien_id)
     if not pasien or pasien.role != 'pasien':
         return jsonify({"msg": f"Pasien dengan ID {pasien_id} tidak ditemukan."}), 404
 
