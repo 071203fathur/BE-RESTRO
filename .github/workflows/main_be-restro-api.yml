@@ -63,7 +63,6 @@ jobs:
 
       - name: Unzip artifact for deployment
         run: unzip release.zip
-
       
       - name: Login to Azure
         uses: azure/login@v2
@@ -73,9 +72,18 @@ jobs:
           subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_A83469A03A344DF8AA3A88543CB7D6A6 }}
 
       - name: 'Deploy to Azure Web App'
-        uses: azure/webapps-deploy@v3
         id: deploy-to-webapp
+        uses: azure/webapps-deploy@v3
         with:
           app-name: 'be-restro-api'
           slot-name: 'Production'
+          package: . # Titik (.) berarti deploy dari folder saat ini setelah di-unzip
+
+      # --- BLOK TAMBAHAN UNTUK MIGRASI DATABASE ---
+      # Tambahkan blok ini persis di bawah langkah 'Deploy to Azure Web App'
+      - name: Run Database Migrations
+        run: |
+          az webapp ssh --resource-group RG-RestroApp --name be-restro-api -- "cd /home/site/wwwroot && source antenv/bin/activate && flask db upgrade"
+      # --- AKHIR BLOK TAMBAHAN ---
+
           
