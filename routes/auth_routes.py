@@ -1,7 +1,7 @@
 # BE-RESTRO/routes/auth_routes.py
 
 from flask import Blueprint, request, jsonify
-from models import User, PatientProfile, db # Pastikan db dan model lain diimport
+from models import AppUser, PatientProfile, db # Pastikan db dan model lain diimport
 from app import bcrypt # Import bcrypt dari app.py
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 from datetime import timedelta 
@@ -22,12 +22,13 @@ def register_terapis():
     if not all([username, nama_lengkap, email, password]):
         return jsonify({"msg": "Semua field (username, nama_lengkap, email, password) harus diisi"}), 400
 
-    if User.query.filter_by(username=username).first():
+    # 2. Ganti User menjadi AppUser
+    if AppUser.query.filter_by(username=data.get('username')).first():
         return jsonify({"msg": "Username sudah terdaftar"}), 409
-    if User.query.filter_by(email=email).first():
+    if AppUser.query.filter_by(email=data.get('email')).first():
         return jsonify({"msg": "Email sudah terdaftar"}), 409
 
-    new_terapis = User(
+    new_terapis = AppUser(
         username=username,
         nama_lengkap=nama_lengkap,
         email=email,
@@ -55,9 +56,9 @@ def login_terapis():
     if not identifier or not password:
         return jsonify({"msg": "Identifier (username/email) dan password harus diisi"}), 400
 
-    user = User.query.filter(
-        (User.email == identifier) | (User.username == identifier),
-        User.role == 'terapis'
+    user = AppUser.query.filter(
+        (AppUser.email == identifier) | (AppUser.username == identifier),
+        AppUser.role == 'terapis'
     ).first()
 
     if user and user.check_password(password):
@@ -136,9 +137,9 @@ def login_pasien():
     if not identifier or not password:
         return jsonify({"msg": "Identifier (username/email) dan password harus diisi"}), 400
 
-    user = User.query.filter(
-        (User.email == identifier) | (User.username == identifier),
-        User.role == 'pasien'
+    user = AppUser.query.filter(
+        (AppUser.email == identifier) | (AppUser.username == identifier),
+        AppUser.role == 'pasien'
     ).first()
 
     if user and user.check_password(password):

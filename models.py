@@ -15,8 +15,10 @@ class ProgramStatus(str, enum.Enum):
     DIBATALKAN = "dibatalkan"
 
 # --- Model User ---
-class User(db.Model):
-    __tablename__ = 'users'
+class AppUser(db.Model):
+    # 2. Nama tabel diubah menjadi 'app_users' untuk menghindari konflik
+    __tablename__ = 'app_users'
+
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False, index=True)
     nama_lengkap = db.Column(db.String(120), nullable=False)
@@ -24,6 +26,7 @@ class User(db.Model):
     password_hash = db.Column(db.String(128), nullable=False)
     role = db.Column(db.String(10), nullable=False, index=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
     patient_profile = db.relationship('PatientProfile', back_populates='user', uselist=False, cascade="all, delete-orphan")
 
     def set_password(self, password):
@@ -33,13 +36,19 @@ class User(db.Model):
         return bcrypt.check_password_hash(self.password_hash, password)
 
     def serialize_basic(self):
-        return {'id': self.id, 'username': self.username, 'nama_lengkap': self.nama_lengkap, 'email': self.email, 'role': self.role}
+        return {
+            'id': self.id,
+            'username': self.username,
+            'nama_lengkap': self.nama_lengkap,
+            'email': self.email,
+            'role': self.role
+        }
 
 # --- Model PatientProfile ---
 class PatientProfile(db.Model):
     __tablename__ = 'patient_profiles'
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), unique=True, nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('app_users.id', ondelete='CASCADE'), unique=True, nullable=False)
     jenis_kelamin = db.Column(db.String(20), nullable=True)
     tanggal_lahir = db.Column(db.Date, nullable=True)
     tempat_lahir = db.Column(db.String(100), nullable=True)
@@ -56,7 +65,7 @@ class PatientProfile(db.Model):
     # **KOLOM BARU** untuk menyimpan path blob foto profil
     filename_foto_profil = db.Column(db.String(255), nullable=True)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    user = db.relationship('User', back_populates='patient_profile')
+    user = db.relationship('AppUser', back_populates='patient_profile')
 
     def serialize_full(self):
         user_data = self.user.serialize_basic() if self.user else {}
@@ -91,10 +100,10 @@ class Gerakan(db.Model):
     blob_name_foto = db.Column(db.String(255), nullable=True)
     blob_name_video = db.Column(db.String(255), nullable=True)
     blob_name_model_tflite = db.Column(db.String(255), nullable=True)
-    created_by_terapis_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'), nullable=True)
+    created_by_terapis_id = db.Column(db.Integer, db.ForeignKey('app_users.id', ondelete='SET NULL'), nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    pembuat = db.relationship('User', foreign_keys=[created_by_terapis_id])
+    pembuat = db.relationship('AppUser', foreign_keys=[created_by_terapis_id])
 
     # **DIHAPUS**: Fungsi get_file_url tidak diperlukan lagi, digantikan helper.
 
@@ -124,13 +133,13 @@ class ProgramRehabilitasi(db.Model):
     tanggal_program = db.Column(db.Date, nullable=False, default=date.today)
     catatan_terapis = db.Column(db.Text, nullable=True)
     status = db.Column(db.Enum(ProgramStatus), nullable=False, default=ProgramStatus.BELUM_DIMULAI, index=True)
-    terapis_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'), nullable=True)
-    pasien_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
+    terapis_id = db.Column(db.Integer, db.ForeignKey('app_users.id', ondelete='SET NULL'), nullable=True)
+    pasien_id = db.Column(db.Integer, db.ForeignKey('app_users.id', ondelete='CASCADE'), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     detail_gerakan = db.relationship('ProgramGerakanDetail', backref='program', lazy='dynamic', cascade="all, delete-orphan")
-    terapis = db.relationship('User', foreign_keys=[terapis_id], backref="program_dibuat")
-    pasien = db.relationship('User', foreign_keys=[pasien_id], backref="program_diterima")
+    terapis = db.relationship('AppUser', foreign_keys=[terapis_id], backref="program_dibuat")
+    pasien = db.relationship('AppUser', foreign_keys=[pasien_id], backref="program_diterima")
 
     def serialize_full(self): # **DIUBAH**: Tidak perlu `app_config`
         list_gerakan_details = []
@@ -174,14 +183,14 @@ class LaporanRehabilitasi(db.Model):
     __tablename__ = 'laporan_rehabilitasi'
     id = db.Column(db.Integer, primary_key=True)
     program_rehabilitasi_id = db.Column(db.Integer, db.ForeignKey('program_rehabilitasi.id', ondelete='SET NULL'), nullable=True, index=True)
-    pasien_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False, index=True)
-    terapis_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'), nullable=True)
+    pasien_id = db.Column(db.Integer, db.ForeignKey('app_users.id', ondelete='CASCADE'), nullable=False, index=True)
+    terapis_id = db.Column(db.Integer, db.ForeignKey('app_users.id', ondelete='SET NULL'), nullable=True)
     tanggal_laporan = db.Column(db.Date, nullable=False, default=date.today)
     total_waktu_rehabilitasi_detik = db.Column(db.Integer, nullable=True)
     catatan_pasien_laporan = db.Column(db.Text, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    pasien = db.relationship('User', foreign_keys=[pasien_id], backref='laporan_rehabilitasi_pasien')
-    terapis_yang_assign = db.relationship('User', foreign_keys=[terapis_id], backref='laporan_rehabilitasi_terapis')
+    pasien = db.relationship('AppUser', foreign_keys=[pasien_id], backref='laporan_rehabilitasi_pasien')
+    terapis_yang_assign = db.relationship('AppUser', foreign_keys=[terapis_id], backref='laporan_rehabilitasi_terapis')
     program_asli = db.relationship('ProgramRehabilitasi', backref=db.backref('laporan_hasil', uselist=False, cascade="all, delete-orphan"))
     detail_hasil_gerakan = db.relationship('LaporanGerakanHasil', backref='laporan_induk', lazy='dynamic', cascade="all, delete-orphan")
 
