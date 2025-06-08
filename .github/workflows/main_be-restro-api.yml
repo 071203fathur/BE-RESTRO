@@ -83,7 +83,7 @@ jobs:
       # Tambahkan blok ini persis di bawah langkah 'Deploy to Azure Web App'
       - name: Run Database Migrations
         run: |
-          az webapp ssh --resource-group RG-RestroApp --name be-restro-api -- "cd /home/site/wwwroot && source antenv/bin/activate && flask db upgrade"
-      # --- AKHIR BLOK TAMBAHAN ---
+          az webapp ssh -g RG-RestroApp -n be-restro-api --command "cd /home/site/wwwroot && source antenv/bin/activate && flask db upgrade"      
+          # --- AKHIR BLOK TAMBAHAN ---
 
           
