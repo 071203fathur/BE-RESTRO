@@ -15,27 +15,23 @@ def create_app(test_config=None):
     app = Flask(__name__)
 
     # --- KONFIGURASI APLIKASI ---
-    # Prioritaskan test_config jika ada (untuk testing)
+    # Cara ini lebih andal untuk memuat konfigurasi
     if test_config is None:
-        # Konfigurasi default dari environment variables
         app.config.from_mapping(
             SQLALCHEMY_DATABASE_URI=os.getenv('DATABASE_URL'),
             JWT_SECRET_KEY=os.getenv('JWT_SECRET_KEY'),
             SQLALCHEMY_TRACK_MODIFICATIONS=False,
             JSON_SORT_KEYS=False,
-            # Memberitahu Flask-JWT-Extended untuk mengizinkan tipe data apa pun
-            # (termasuk dictionary) sebagai identity di dalam token.
+            # Memberitahu Flask-JWT-Extended untuk mengizinkan dictionary
             JWT_DECODE_JSON=True
         )
     else:
-        # Muat konfigurasi dari test_config
         app.config.from_mapping(test_config)
 
-    # Memastikan JWT_SECRET_KEY ada, jika tidak, aplikasi akan gagal start
-    # Ini membantu mendeteksi error konfigurasi lebih awal
+    # Menambahkan pengecekan untuk memastikan kunci tidak kosong saat aplikasi dimulai
     if not app.config.get("JWT_SECRET_KEY"):
         raise RuntimeError("JWT_SECRET_KEY tidak diatur di environment variables!")
-
+    
     # --- INISIALISASI EKSTENSI DENGAN APLIKASI ---
     db.init_app(app)
     migrate.init_app(app, db)
