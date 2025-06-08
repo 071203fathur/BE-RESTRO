@@ -10,22 +10,32 @@ from extensions import db, migrate, jwt, bcrypt, cors
 # Muat variabel lingkungan dari file .env
 load_dotenv()
 
-def create_app():
+def create_app(test_config=None):
     """Factory untuk membuat dan mengkonfigurasi instance aplikasi Flask."""
     app = Flask(__name__)
 
     # --- KONFIGURASI APLIKASI ---
-    app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
-    app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY')
-    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-    app.config['JSON_SORT_KEYS'] = False
+    # Prioritaskan test_config jika ada (untuk testing)
+    if test_config is None:
+        # Konfigurasi default dari environment variables
+        app.config.from_mapping(
+            SQLALCHEMY_DATABASE_URI=os.getenv('DATABASE_URL'),
+            JWT_SECRET_KEY=os.getenv('JWT_SECRET_KEY'),
+            SQLALCHEMY_TRACK_MODIFICATIONS=False,
+            JSON_SORT_KEYS=False,
+            # Memberitahu Flask-JWT-Extended untuk mengizinkan tipe data apa pun
+            # (termasuk dictionary) sebagai identity di dalam token.
+            JWT_DECODE_JSON=True
+        )
+    else:
+        # Muat konfigurasi dari test_config
+        app.config.from_mapping(test_config)
 
-    # --- TAMBAHKAN KONFIGURASI INI ---
-    # Memberitahu Flask-JWT-Extended untuk mengizinkan tipe data apa pun
-    # (termasuk dictionary) sebagai identity di dalam token.
-    app.config["JWT_DECODE_JSON"] = True
-    # --- AKHIR BLOK TAMBAHAN ---
-    
+    # Memastikan JWT_SECRET_KEY ada, jika tidak, aplikasi akan gagal start
+    # Ini membantu mendeteksi error konfigurasi lebih awal
+    if not app.config.get("JWT_SECRET_KEY"):
+        raise RuntimeError("JWT_SECRET_KEY tidak diatur di environment variables!")
+
     # --- INISIALISASI EKSTENSI DENGAN APLIKASI ---
     db.init_app(app)
     migrate.init_app(app, db)
@@ -54,7 +64,7 @@ def create_app():
 
         @app.route('/')
         def hello():
-            return "API Backend BE-RESTRO v4.1 (JWT Fix) berjalan!"
+            return "API Backend BE-RESTRO v4.2 (Config Refactored) berjalan!"
 
         return app
 
