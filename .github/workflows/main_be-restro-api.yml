@@ -44,8 +44,8 @@ jobs:
       name: 'Production'
       url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
     permissions:
-      id-token: write #This is required for requesting the JWT
-      contents: read #This is required for actions/checkout
+      id-token: write
+      contents: read
 
     steps:
       - name: Download artifact from build job
@@ -53,31 +53,25 @@ jobs:
         with:
           name: python-app
           
+      - name: Login to Azure
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_89B1EA6FC8A7461F8452A0B63808CE6D }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_C363485F2C2642C38010965BB0B371C5 }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_A83469A03A344DF8AA3A88543CB7D6A6 }}
+
       - name: 'Deploy to Azure Web App'
         id: deploy-to-webapp
-        uses: azure/webapps-deploy@v3
+        uses: azure/webapps-deploy@v2
         with:
           app-name: 'be-restro-api'
           slot-name: 'Production'
-          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_... }} # Biarkan ini apa adanya, Azure akan mengisinya
           package: .
 
       # --- BLOK MIGRASI YANG SUDAH DIPERBAIKI ---
-      - name: Login to Azure CLI
-        uses: azure/login@v1
-        with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
-
       - name: Run Database Migrations
-        run: |
-          az webapp config set --resource-group RG-RestroApp --name be-restro-api --startup-file ""
-          az webapp restart --name be-restro-api --resource-group RG-RestroApp
-          echo "Waiting 30 seconds for server to restart..."
-          sleep 30
-          echo "Running database migration commands..."
-          az webapp ssh -g RG-RestroApp -n be-restro-api -i 0 --command-line "cd /home/site/wwwroot && source antenv/bin/activate && flask db upgrade"
-          echo "Restoring startup command..."
-          az webapp config set --resource-group RG-RestroApp --name be-restro-api --startup-file "gunicorn --bind=0.0.0.0 --workers=4 app:app"
-          echo "Restarting server with new settings..."
-          az webapp restart --name be-restro-api --resource-group RG-RestroApp
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            az webapp ssh -g RG-RestroApp -n be-restro-api -- bash -c "cd /home/site/wwwroot && source antenv/bin/activate && flask db upgrade"
       # --- AKHIR BLOK MIGRASI ---
