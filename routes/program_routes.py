@@ -65,7 +65,7 @@ def create_and_assign_program():
                 raise ValueError(f"Data gerakan tidak valid pada item {idx+1}")
             
             if not Gerakan.query.get(gerakan_id):
-                 raise ValueError(f"Gerakan dengan ID {gerakan_id} tidak ditemukan")
+                raise ValueError(f"Gerakan dengan ID {gerakan_id} tidak ditemukan")
 
             detail = ProgramGerakanDetail(
                 program_id=new_program.id,
@@ -132,11 +132,87 @@ def get_program_history_pasien():
         "current_page": paginated_programs.page
     }), 200
 
+# NEW ENDPOINT: Get programs assigned to a specific patient by therapist
+@program_bp.route('/terapis/assigned-to-patient/<int:pasien_id>', methods=['GET'])
+@jwt_required()
+def get_assigned_programs_for_patient(pasien_id):
+    current_user_identity = get_jwt_identity()
+    if current_user_identity.get('role') != 'terapis':
+        return jsonify({"msg": "Akses ditolak"}), 403
+
+    # Ensure the patient exists
+    pasien = AppUser.query.filter_by(id=pasien_id, role='pasien').first_or_404("Pasien tidak ditemukan.")
+
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 100, type=int) # Default higher for this view
+
+    # Query for programs assigned to this patient by the current therapist
+    paginated_programs = ProgramRehabilitasi.query.filter(
+        ProgramRehabilitasi.pasien_id == pasien_id,
+        ProgramRehabilitasi.terapis_id == current_user_identity.get('id')
+    ).order_by(ProgramRehabilitasi.tanggal_program.desc(), ProgramRehabilitasi.created_at.desc())\
+     .paginate(page=page, per_page=per_page, error_out=False)
+
+    results = [p.serialize_full() for p in paginated_programs.items]
+
+    return jsonify({
+        "msg": f"Daftar program yang di-assign ke pasien {pasien.nama_lengkap} berhasil diambil",
+        "programs": results,
+        "total_items": paginated_programs.total,
+        "total_pages": paginated_programs.pages,
+        "current_page": paginated_programs.page
+    }), 200
+
 # Endpoint lainnya juga disesuaikan dengan cara yang sama
 @program_bp.route('/<int:program_id>', methods=['GET'])
 @jwt_required()
 def get_program_detail(program_id):
     program = ProgramRehabilitasi.query.get_or_404(program_id)
-    # ... (logika otorisasi tetap sama) ...
-    # DIUBAH: Menghapus parameter config
-    return jsonify(program.serialize_full()), 200
+    # Check authorization: either patient owner or assigned therapist
+    current_user_identity = get_jwt_identity()
+    if current_user_identity.get('role') == 'pasien' and program.pasien_id != current_user_identity.get('id'):
+        return jsonify({"msg": "Akses ditolak"}), 403
+    elif current_user_identity.get('role') == 'terapis' and program.terapis_id != current_user_identity.get('id'):
+        return jsonify({"msg": "Akses ditolak"}), 403
+
+    return jsonify({"msg": "Detail program berhasil diambil", "program": program.serialize_full()}), 200
+
+
+@program_bp.route('/<int:program_id>/update-status', methods=['PUT'])
+@jwt_required()
+def update_program_status(program_id):
+    current_user_identity = get_jwt_identity()
+    
+    program = ProgramRehabilitasi.query.get_or_404(program_id)
+
+    # Authorization check
+    if current_user_identity.get('role') == 'pasien' and program.pasien_id != current_user_identity.get('id'):
+        return jsonify({"msg": "Akses ditolak"}), 403
+    if current_user_identity.get('role') == 'terapis' and program.terapis_id != current_user_identity.get('id'):
+        return jsonify({"msg": "Akses ditolak"}), 403
+
+    data = request.get_json()
+    new_status_str = data.get('status')
+
+    if not new_status_str:
+        return jsonify({"msg": "Status baru harus disediakan"}), 400
+
+    try:
+        new_status = ProgramStatus(new_status_str)
+    except ValueError:
+        return jsonify({"msg": "Status tidak valid"}), 400
+
+    # Only therapist or system can change to 'selesai' or 'dibatalkan'
+    # Patient can only change from 'belum_dimulai' to 'berjalan'
+    if current_user_identity.get('role') == 'pasien' and \
+       (new_status == ProgramStatus.SELESAI or new_status == ProgramStatus.DIBATALKAN):
+        return jsonify({"msg": "Pasien tidak diizinkan mengubah status menjadi selesai atau dibatalkan langsung."}), 403
+
+    program.status = new_status
+    db.session.commit()
+
+    return jsonify({
+        "msg": f"Status program berhasil diubah menjadi '{new_status.value}'",
+        "program": program.serialize_simple()
+    }), 200
+
