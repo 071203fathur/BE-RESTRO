@@ -1,5 +1,5 @@
 # app.py
-# PERUBAHAN: Menambahkan impor model PolaMakan
+# PERUBAHAN: Menambahkan impor model PolaMakan dan gcs_helpers (melalui rute gerakan)
 # (Kode lainnya tetap sama seperti versi terakhir Anda)
 
 import os
