@@ -6,6 +6,7 @@ from datetime import datetime, date
 from sqlalchemy.orm import validates
 import enum
 from utils.azure_helpers import get_blob_url
+from utils.gcs_helpers import get_gcs_url # Import helper GCS baru
 
 # Enum untuk Status Program
 class ProgramStatus(str, enum.Enum):
@@ -97,7 +98,8 @@ class Gerakan(db.Model):
     deskripsi = db.Column(db.Text, nullable=True)
     blob_name_foto = db.Column(db.String(255), nullable=True)
     blob_name_video = db.Column(db.String(255), nullable=True)
-    blob_name_model_tflite = db.Column(db.String(255), nullable=True)
+    # Kolom untuk menyimpan URI GCS untuk model TFLite
+    gcs_uri_model_tflite = db.Column(db.String(255), nullable=True) 
     created_by_terapis_id = db.Column(db.Integer, db.ForeignKey('app_users.id', ondelete='SET NULL'), nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -114,7 +116,7 @@ class Gerakan(db.Model):
             "deskripsi": self.deskripsi,
             "url_foto": get_blob_url(self.blob_name_foto),
             "url_video": get_blob_url(self.blob_name_video),
-            "url_model_tflite": get_blob_url(self.blob_name_model_tflite),
+            "url_model_tflite": get_gcs_url(self.gcs_uri_model_tflite.split('/')[-1]) if self.gcs_uri_model_tflite else None, # Ambil nama blob dari URI GCS
             "created_by_terapis": pembuat_info,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
