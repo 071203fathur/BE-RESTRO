@@ -1,6 +1,9 @@
-# BE-RESTRO/routes/program_routes.py
+# routes/program_routes.py
+# PERUBAHAN: Menampilkan foto pasien dan diagnosis di endpoint /pasien-list
+# PENAMBAHAN: Endpoint baru /program/patient-info/<int:pasien_id>
+
 from flask import Blueprint, request, jsonify
-from models import db, AppUser, Gerakan, ProgramRehabilitasi, ProgramGerakanDetail, ProgramStatus
+from models import db, AppUser, Gerakan, ProgramRehabilitasi, ProgramGerakanDetail, ProgramStatus, PatientProfile # Import PatientProfile
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from datetime import date, datetime
 
@@ -9,12 +12,86 @@ program_bp = Blueprint('program_bp', __name__)
 @program_bp.route('/pasien-list', methods=['GET'])
 @jwt_required()
 def get_pasien_list_for_terapis():
+    """
+    Endpoint untuk terapis mendapatkan daftar pasien (untuk dropdown program),
+    sekarang termasuk foto profil dan diagnosis pasien.
+    """
     current_user_identity = get_jwt_identity()
     if current_user_identity.get('role') != 'terapis':
         return jsonify({"msg": "Akses ditolak"}), 403
     
-    pasien_list = AppUser.query.filter_by(role='pasien').order_by(AppUser.nama_lengkap.asc()).all()
-    return jsonify([p.serialize_basic() for p in pasien_list]), 200
+    # Query untuk mengambil semua AppUser dengan role 'pasien'
+    # dan melakukan outerjoin dengan PatientProfile untuk mendapatkan data tambahan.
+    pasien_records = db.session.query(AppUser, PatientProfile).\
+        filter(AppUser.role == 'pasien').\
+        outerjoin(PatientProfile, AppUser.id == PatientProfile.user_id).\
+        order_by(AppUser.nama_lengkap.asc()).all()
+    
+    pasien_list = []
+    for user, profile in pasien_records:
+        patient_data = {
+            "id": user.id,
+            "username": user.username,
+            "nama_lengkap": user.nama_lengkap,
+            "email": user.email,
+            "role": user.role,
+        }
+        
+        # Tambahkan data dari PatientProfile jika ada
+        if profile:
+            patient_data["foto_url"] = profile.serialize_full().get('url_foto_profil')
+            patient_data["diagnosis"] = profile.diagnosis
+        else:
+            patient_data["foto_url"] = None
+            patient_data["diagnosis"] = "Belum ada diagnosis" # Default jika tidak ada profil
+
+        pasien_list.append(patient_data)
+
+    return jsonify(pasien_list), 200
+
+@program_bp.route('/patient-info/<int:pasien_id>', methods=['GET'])
+@jwt_required()
+def get_patient_info_for_program_context(pasien_id):
+    """
+    Endpoint untuk mendapatkan informasi dasar pasien (termasuk foto dan diagnosis)
+    dalam konteks modul program. Dapat diakses oleh terapis.
+    """
+    current_user_identity = get_jwt_identity()
+    if current_user_identity.get('role') != 'terapis':
+        return jsonify({"msg": "Akses ditolak: Hanya terapis yang dapat mengakses info pasien."}), 403
+    
+    # Gabungkan AppUser dan PatientProfile
+    user_record = db.session.query(AppUser, PatientProfile).\
+        filter(AppUser.id == pasien_id, AppUser.role == 'pasien').\
+        outerjoin(PatientProfile, AppUser.id == PatientProfile.user_id).\
+        first()
+
+    if not user_record:
+        return jsonify({"msg": f"Pasien dengan ID {pasien_id} tidak ditemukan."}), 404
+
+    user, profile = user_record
+    
+    patient_info = {
+        "id": user.id,
+        "username": user.username,
+        "nama_lengkap": user.nama_lengkap,
+        "email": user.email,
+        "role": user.role,
+    }
+
+    if profile:
+        patient_info["foto_url"] = profile.serialize_full().get('url_foto_profil')
+        patient_info["diagnosis"] = profile.diagnosis
+        patient_info["jenis_kelamin"] = profile.jenis_kelamin
+        patient_info["tanggal_lahir"] = profile.tanggal_lahir.isoformat() if profile.tanggal_lahir else None
+        # Anda bisa menambahkan field lain yang relevan dari PatientProfile di sini
+    else:
+        patient_info["foto_url"] = None
+        patient_info["diagnosis"] = "Belum ada diagnosis"
+        patient_info["jenis_kelamin"] = None
+        patient_info["tanggal_lahir"] = None
+
+    return jsonify(patient_info), 200
 
 
 @program_bp.route('/', methods=['POST'])
@@ -76,7 +153,6 @@ def create_and_assign_program():
             db.session.add(detail)
         
         db.session.commit()
-        # DIUBAH: Menghapus parameter config
         return jsonify({"msg": "Program berhasil dibuat", "program": new_program.serialize_full()}), 201
     
     except Exception as e:
@@ -103,7 +179,6 @@ def get_program_pasien_today():
     if not program:
         return jsonify({"msg": "Tidak ada program aktif yang dijadwalkan."}), 404
         
-    # DIUBAH: Menghapus parameter config
     return jsonify(program.serialize_full()), 200
 
 
@@ -122,7 +197,6 @@ def get_program_history_pasien():
         .order_by(ProgramRehabilitasi.tanggal_program.desc(), ProgramRehabilitasi.created_at.desc())\
         .paginate(page=page, per_page=per_page, error_out=False)
     
-    # DIUBAH: Menghapus parameter config
     results = [p.serialize_full() for p in paginated_programs.items]
 
     return jsonify({
@@ -215,4 +289,3 @@ def update_program_status(program_id):
         "msg": f"Status program berhasil diubah menjadi '{new_status.value}'",
         "program": program.serialize_simple()
     }), 200
-

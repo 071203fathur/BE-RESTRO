@@ -1,47 +1,42 @@
-# BE-RESTRO/app.py
+# app.py
+# PERUBAHAN: Menambahkan impor model PolaMakan
+# (Kode lainnya tetap sama seperti versi terakhir Anda)
 
 import os
 from flask import Flask
 from dotenv import load_dotenv
 
-# Import ekstensi dari file extensions.py
 from extensions import db, migrate, jwt, bcrypt, cors
 
-# Muat variabel lingkungan dari file .env
 load_dotenv()
 
 def create_app(test_config=None):
-    """Factory untuk membuat dan mengkonfigurasi instance aplikasi Flask."""
     app = Flask(__name__)
 
-    # --- KONFIGURASI APLIKASI ---
-    # Cara ini lebih andal untuk memuat konfigurasi
     if test_config is None:
         app.config.from_mapping(
             SQLALCHEMY_DATABASE_URI=os.getenv('DATABASE_URL'),
             JWT_SECRET_KEY=os.getenv('JWT_SECRET_KEY'),
             SQLALCHEMY_TRACK_MODIFICATIONS=False,
             JSON_SORT_KEYS=False,
-            # Memberitahu Flask-JWT-Extended untuk mengizinkan dictionary
             JWT_DECODE_JSON=True
         )
     else:
         app.config.from_mapping(test_config)
 
-    # Menambahkan pengecekan untuk memastikan kunci tidak kosong saat aplikasi dimulai
     if not app.config.get("JWT_SECRET_KEY"):
         raise RuntimeError("JWT_SECRET_KEY tidak diatur di environment variables!")
     
-    # --- INISIALISASI EKSTENSI DENGAN APLIKASI ---
     db.init_app(app)
     migrate.init_app(app, db)
     jwt.init_app(app)
     bcrypt.init_app(app)
     cors.init_app(app, resources={r"/*": {"origins": "*"}}) 
 
-    # --- Konteks Aplikasi untuk Import Model dan Registrasi Blueprint ---
     with app.app_context():
-        from models import AppUser, PatientProfile, Gerakan, ProgramRehabilitasi, ProgramGerakanDetail, LaporanRehabilitasi, LaporanGerakanHasil
+        # Tambahkan PolaMakan ke daftar impor model
+        from models import AppUser, PatientProfile, Gerakan, ProgramRehabilitasi, ProgramGerakanDetail, LaporanRehabilitasi, LaporanGerakanHasil, PolaMakan
+        
         from routes.auth_routes import auth_bp
         from routes.patient_routes import patient_bp
         from routes.gerakan_routes import gerakan_bp
@@ -64,7 +59,6 @@ def create_app(test_config=None):
 
         return app
 
-# Membuat instance aplikasi
 app = create_app()
 
 if __name__ == '__main__':
