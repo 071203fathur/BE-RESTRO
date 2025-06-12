@@ -1,5 +1,5 @@
 # utils/gcs_helpers.py
-# Modul helper baru untuk interaksi dengan Google Cloud Storage.
+# Modul helper baru untuk interaksi dengan Google Cloud Storage dan Vertex AI.
 
 from google.cloud import storage
 import os
@@ -15,6 +15,8 @@ GCS_BUCKET_NAME = os.getenv("GCS_BUCKET_NAME", "data-rehab-restro")
 # Folder di dalam bucket yang akan menampung data input video untuk training.
 # Contoh: "data_latihan_baru/raw_videos/"
 GCS_DESTINATION_FOLDER_RAW_VIDEOS = os.getenv("GCS_RAW_VIDEOS_FOLDER", "data_training_raw_videos/")
+GCS_DESTINATION_FOLDER_MODELS = os.getenv("GCS_MODELS_FOLDER", "trained_tflite_models/")
+
 
 # Inisialisasi klien GCS.
 # Library akan otomatis menggunakan kunci dari environment variable GOOGLE_APPLICATION_CREDENTIALS
@@ -28,7 +30,7 @@ except Exception as e:
 def upload_file_to_gcs(file_stream, destination_blob_name, content_type=None):
     """
     Fungsi untuk mengunggah file dari stream ke GCS.
-    Digunakan untuk mengunggah video dari request.files.
+    Digunakan untuk mengunggah model .tflite dari request.files.
     
     Args:
         file_stream: Objek file stream (misal: request.files['video']).
@@ -61,7 +63,6 @@ def upload_file_to_gcs(file_stream, destination_blob_name, content_type=None):
         current_app.logger.error(f"GAGAL: Upload ke GCS gagal. Error: {e}")
         return None, f"Gagal mengunggah file ke Google Cloud Storage: {str(e)}"
 
-# Anda bisa menambahkan fungsi lain untuk menghapus file dari GCS jika diperlukan
 def delete_file_from_gcs(blob_name):
     """Menghapus sebuah blob dari Google Cloud Storage."""
     if storage_client is None:
@@ -73,8 +74,20 @@ def delete_file_from_gcs(blob_name):
         current_app.logger.info(f"SUKSES: File '{blob_name}' dihapus dari GCS.")
         return True, None
     except Exception as e:
+        if "NotFound" in str(e): # Handle case where blob might not exist
+            current_app.logger.warning(f"Blob '{blob_name}' not found for deletion, but proceeding.")
+            return True, None
         current_app.logger.error(f"GAGAL: Menghapus file dari GCS gagal. Error: {e}")
         return False, f"Gagal menghapus file dari Google Cloud Storage: {str(e)}"
+
+def get_gcs_url(blob_name):
+    """Membangun URL publik untuk sebuah blob GCS."""
+    if not blob_name:
+        return None
+    # Asumsi bucket public atau ada cara lain untuk mengakses (misal: signed URL)
+    # Untuk tujuan ini, kita asumsikan dapat diakses secara publik
+    return f"https://storage.googleapis.com/{GCS_BUCKET_NAME}/{blob_name}"
+
 
 # Fungsi placeholder untuk memicu Vertex AI training (konseptual)
 def trigger_vertex_ai_training(gcs_video_uri, training_id, model_name, project_id, location):
@@ -105,16 +118,16 @@ def trigger_vertex_ai_training(gcs_video_uri, training_id, model_name, project_i
         # # Asumsikan Anda punya CustomContainerTrainingJob atau CustomJob
         # # yang sudah mengacu pada Docker Image training Anda dan GCS path input/output
         # job = aiplatform.CustomContainerTrainingJob(
-        #     display_name=f"gerakan-training-{model_name}-{training_id}",
-        #     container_uri="gcr.io/your-project/your-training-image:latest", # Ganti dengan image training Anda
-        #     command=["python", "train.py", "--input_video", gcs_video_uri, "--output_model_dir", f"gs://{GCS_BUCKET_NAME}/trained_models/"],
-        #     # resource_pool=[{"machine_type": "n1-standard-4", "replica_count": 1}],
+        #    display_name=f"gerakan-training-{model_name}-{training_id}",
+        #    container_uri="gcr.io/your-project/your-training-image:latest", # Ganti dengan image training Anda
+        #    command=["python", "train.py", "--input_video", gcs_video_uri, "--output_model_dir", f"gs://{GCS_BUCKET_NAME}/trained_models/"],
+        #    # resource_pool=[{"machine_type": "n1-standard-4", "replica_count": 1}],
         # )
         #
         # model = job.run(
-        #     # Asumsi ada skema input/output model yang cocok
-        #     model_display_name=model_name,
-        #     sync=False # Jangan sync agar tidak memblokir API response
+        #    # Asumsi ada skema input/output model yang cocok
+        #    model_display_name=model_name,
+        #    sync=False # Jangan sync agar tidak memblokir API response
         # )
         
         # Untuk demo dan mencegah dependency kompleks, kita hanya akan return sukses
@@ -122,4 +135,3 @@ def trigger_vertex_ai_training(gcs_video_uri, training_id, model_name, project_i
     except Exception as e:
         current_app.logger.error(f"Gagal memicu training Vertex AI: {e}")
         return False, f"Gagal memicu training Vertex AI: {str(e)}"
-
