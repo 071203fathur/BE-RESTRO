@@ -1,6 +1,5 @@
 # routes/terapis_routes.py
-# PERBAIKAN: Menambahkan .strip() dan debug print pada parsing tanggal
-# di endpoint get_diet_plan_for_patient_on_date.
+# TERBARU: Mengubah KPI dashboard, data grafik harian, dan manajemen Pola Makan.
 
 from flask import Blueprint, jsonify, request
 from models import db, AppUser, PatientProfile, ProgramRehabilitasi, ProgramStatus, PolaMakan

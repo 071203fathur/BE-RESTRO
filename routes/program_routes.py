@@ -1,9 +1,10 @@
 # routes/program_routes.py
-# PERUBAHAN: Menampilkan foto pasien dan diagnosis di endpoint /pasien-list
-# PENAMBAHAN: Endpoint baru /program/patient-info/<int:pasien_id>
+# TERBARU: Menampilkan foto pasien dan diagnosis di endpoint /pasien-list
+# Menambahkan endpoint baru /program/patient-info/<int:pasien_id>
+# untuk mendapatkan info pasien dasar.
 
 from flask import Blueprint, request, jsonify
-from models import db, AppUser, Gerakan, ProgramRehabilitasi, ProgramGerakanDetail, ProgramStatus, PatientProfile # Import PatientProfile
+from models import db, AppUser, Gerakan, ProgramRehabilitasi, ProgramGerakanDetail, ProgramStatus, PatientProfile
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from datetime import date, datetime
 

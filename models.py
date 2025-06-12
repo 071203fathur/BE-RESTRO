@@ -1,6 +1,5 @@
 # models.py
-# PERUBAHAN: Penambahan model baru: PolaMakan
-# (Kode model lainnya tetap sama seperti versi terakhir Anda)
+# TERBARU: Penambahan model PolaMakan dan penyesuaian relasi LaporanRehabilitasi.
 
 from app import db, bcrypt
 from datetime import datetime, date
@@ -8,7 +7,7 @@ from sqlalchemy.orm import validates
 import enum
 from utils.azure_helpers import get_blob_url
 
-# Enum sudah ada
+# Enum untuk Status Program
 class ProgramStatus(str, enum.Enum):
     BELUM_DIMULAI = "belum_dimulai"
     BERJALAN = "berjalan"
@@ -26,9 +25,9 @@ class AppUser(db.Model):
     role = db.Column(db.String(10), nullable=False, index=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     patient_profile = db.relationship('PatientProfile', back_populates='user', uselist=False, cascade="all, delete-orphan")
-    # Tambahan: Relasi ke PolaMakan yang dibuat oleh terapis
+    # Relasi ke PolaMakan yang dibuat oleh terapis
     pola_makan_dibuat = db.relationship('PolaMakan', foreign_keys='PolaMakan.terapis_id', backref='terapis_pembuat', lazy=True)
-    # Tambahan: Relasi ke PolaMakan yang diterima oleh pasien
+    # Relasi ke PolaMakan yang diterima oleh pasien
     pola_makan_diterima = db.relationship('PolaMakan', foreign_keys='PolaMakan.pasien_id', backref='pasien_penerima', lazy=True)
 
     def set_password(self, password):
@@ -136,6 +135,7 @@ class ProgramRehabilitasi(db.Model):
     detail_gerakan = db.relationship('ProgramGerakanDetail', backref='program', lazy='dynamic', cascade="all, delete-orphan")
     terapis = db.relationship('AppUser', foreign_keys=[terapis_id], backref="program_dibuat")
     pasien = db.relationship('AppUser', foreign_keys=[pasien_id], backref="program_diterima")
+    # Relasi ke LaporanRehabilitasi, menggunakan backref='program_rehab'
     laporan_hasil = db.relationship('LaporanRehabilitasi', backref='program_rehab', uselist=False, cascade="all, delete-orphan", primaryjoin="ProgramRehabilitasi.id == LaporanRehabilitasi.program_rehabilitasi_id")
 
 

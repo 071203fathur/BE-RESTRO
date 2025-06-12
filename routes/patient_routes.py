@@ -1,10 +1,10 @@
 # routes/patient_routes.py
-# PERUBAHAN: Menambahkan endpoint untuk melihat Pola Makan (Diet Plan) oleh Pasien.
-# PENAMBAHAN: Endpoint baru untuk melihat program rehabilitasi dalam tampilan kalender.
-# (Kode endpoint lainnya tetap sama seperti versi terakhir Anda)
+# TERBARU: Logika update profil pasien agar memungkinkan field disetel ke null/kosong.
+# Menambahkan endpoint untuk melihat Pola Makan (Diet Plan) oleh Pasien.
+# Menambahkan endpoint baru untuk melihat program rehabilitasi dalam tampilan kalender.
 
 from flask import Blueprint, request, jsonify, current_app
-from models import AppUser, PatientProfile, PolaMakan, ProgramRehabilitasi, ProgramStatus, db # Import PolaMakan
+from models import AppUser, PatientProfile, PolaMakan, ProgramRehabilitasi, ProgramStatus, db
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from datetime import datetime, date, timedelta
 from sqlalchemy import func
@@ -50,7 +50,7 @@ def update_patient_profile():
         # Perbarui username dengan validasi keunikan
         if 'username' in data:
             new_username = data['username']
-            if new_username and new_username != user.username:
+            if new_username is not None and new_username != user.username: # Juga cek None
                 if AppUser.query.filter_by(username=new_username).first():
                     return jsonify({"msg": "Username sudah terdaftar"}), 409
             user.username = new_username
@@ -58,7 +58,7 @@ def update_patient_profile():
         # Perbarui email dengan validasi keunikan
         if 'email' in data:
             new_email = data['email']
-            if new_email and new_email != user.email:
+            if new_email is not None and new_email != user.email: # Juga cek None
                 if AppUser.query.filter_by(email=new_email).first():
                     return jsonify({"msg": "Email sudah terdaftar"}), 409
             user.email = new_email
@@ -83,7 +83,7 @@ def update_patient_profile():
         # Perbarui nomor_telepon dengan validasi keunikan
         if 'nomor_telepon' in data:
             new_nomor_telepon = data['nomor_telepon']
-            if new_nomor_telepon and new_nomor_telepon != patient_profile.nomor_telepon:
+            if new_nomor_telepon is not None and new_nomor_telepon != patient_profile.nomor_telepon: # Juga cek None
                 if PatientProfile.query.filter_by(nomor_telepon=new_nomor_telepon).first():
                     return jsonify({"msg": "Nomor telepon sudah terdaftar"}), 409
             patient_profile.nomor_telepon = new_nomor_telepon
@@ -103,7 +103,7 @@ def update_patient_profile():
             patient_profile.berat_badan = data['berat_badan']
         if 'golongan_darah' in data:
             patient_profile.golongan_darah = data['golongan_darah']
-        if 'riwayat_medis' in data: # Ini field yang Anda sebutkan
+        if 'riwayat_medis' in data:
             patient_profile.riwayat_medis = data['riwayat_medis']
         if 'riwayat_alergi' in data:
             patient_profile.riwayat_alergi = data['riwayat_alergi']
@@ -169,7 +169,7 @@ def get_patient_diet_plan(tanggal_str):
     pasien_id = current_user_identity.get('id')
 
     try:
-        tanggal_makan = datetime.strptime(tanggal_str, '%Y-%m-%d').date()
+        tanggal_makan = datetime.strptime(tanggal_str.strip(), '%Y-%m-%d').date()
     except ValueError:
         return jsonify({"msg": "Format tanggal tidak valid (YYYY-MM-DD)"}), 400
 

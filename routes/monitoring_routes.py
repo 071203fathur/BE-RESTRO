@@ -1,6 +1,6 @@
 # routes/monitoring_routes.py
-# PERBAIKAN: Mengubah 'lap.program_asli' menjadi 'lap.program_rehab'
-# untuk mengatasi AttributeError.
+# TERBARU: Mengubah KPI dashboard, data grafik harian, dan manajemen Pola Makan.
+# Memperbaiki relasi 'program_asli' menjadi 'program_rehab'.
 
 from flask import Blueprint, jsonify, current_app
 from models import db, AppUser, PatientProfile, LaporanRehabilitasi, LaporanGerakanHasil, ProgramRehabilitasi, ProgramStatus
