@@ -232,4 +232,3 @@ def get_patient_calendar_programs():
         })
     
     return jsonify({"programs": serialized_programs}), 200
-
