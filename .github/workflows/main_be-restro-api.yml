@@ -81,16 +81,16 @@ jobs:
           # Jika tidak, biarkan kosong untuk default yang mengambil dari root repo
 
       # --- LANGKAH BARU: Jalankan Migrasi Database ---
-      # Perbaikan: Menggunakan `az webapp run-command` untuk menjalankan perintah di container
+      # Perbaikan: Menggunakan `az webapp deployment run-command` untuk menjalankan perintah di container
       - name: 'Run Database Migrations'
         uses: azure/cli@v1 # Menggunakan Azure CLI
         with:
           inlineScript: |
-            echo "Attempting to run database migrations using az webapp run-command..."
-            # Perintah `az webapp run-command` menjalankan perintah di dalam container aplikasi.
+            echo "Attempting to run database migrations using az webapp deployment run-command..."
+            # Perintah `az webapp deployment run-command` menjalankan perintah di dalam container aplikasi.
             # Pastikan path ke virtual environment dan flask db benar di dalam container.
             # Perintah ini akan dieksekusi dari direktori /home/site/wwwroot/
-            az webapp run-command \
+            az webapp deployment run-command \
               --name 'be-restro-api' \
               --resource-group 'RG-RestroApp' \
               --command "source /antenv/bin/activate && flask db upgrade" \
