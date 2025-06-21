@@ -64,6 +64,54 @@ jobs:
       - name: Unzip artifact for deployment
         run: unzip release.zip
 
+      # --- Langkah baru: Setup Python dan Install Dependensi untuk Migrasi di Runner ---
+      # Ini diperlukan agar runner bisa menjalankan flask db upgrade secara langsung
+      - name: Set up Python for deploy job
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10' # Pastikan versi Python ini sama dengan yang di build job dan App Service
+
+      - name: Install database migration dependencies for runner
+        # Menginstal semua dependensi dari requirements.txt, termasuk Alembic dan Psycopg2
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt 
+
+      # --- Langkah baru: Buat script Python untuk menjalankan migrasi ---
+      # Script ini akan memanggil Alembic secara programatik
+      - name: Create run_migrations.py script
+        run: |
+          echo "import os" > run_migrations.py
+          echo "from alembic.config import Config" >> run_migrations.py
+          echo "from alembic import command" >> run_migrations.py
+          echo "from dotenv import load_dotenv" >> run_migrations.py # Untuk keamanan, meskipun tidak akan memuat langsung di GitHub Actions
+          echo "" >> run_migrations.py
+          echo "def run_alembic_upgrade():" >> run_migrations.py
+          echo "    # DATABASE_URL akan diambil dari environment variables yang disetel oleh GitHub Actions" >> run_migrations.py
+          echo "    database_url = os.getenv('DATABASE_URL')" >> run_migrations.py
+          echo "    if not database_url:" >> run_migrations.py
+          echo "        raise ValueError('DATABASE_URL environment variable is not set. Cannot run migrations.')" >> run_migrations.py
+          echo "" >> run_migrations.py
+          echo "    # Asumsikan alembic.ini berada di root direktori proyek" >> run_migrations.py
+          echo "    alembic_cfg = Config('alembic.ini')" >> run_migrations.py
+          echo "" >> run_migrations.py
+          echo "    # Mengatur URL database di konfigurasi Alembic" >> run_migrations.py
+          echo "    alembic_cfg.set_main_option('sqlalchemy.url', database_url)" >> run_migrations.py
+          echo "" >> run_migrations.py
+          echo "    # Menjalankan perintah upgrade Alembic ke head (versi terbaru)" >> run_migrations.py
+          echo "    print(f'Running Alembic upgrade on: {database_url}')" >> run_migrations.py
+          echo "    command.upgrade(alembic_cfg, 'head')" >> run_migrations.py
+          echo "    print('Alembic upgrade completed successfully.')" >> run_migrations.py
+          echo "" >> run_migrations.py
+          echo "if __name__ == '__main__':" >> run_migrations.py
+          echo "    try:" >> run_migrations.py
+          echo "        run_alembic_upgrade()" >> run_migrations.py
+          echo "    except Exception as e:" >> run_migrations.py
+          echo "        print(f'Error during Alembic upgrade: {e}')" >> run_migrations.py
+          echo "        import sys" >> run_migrations.py
+          echo "        sys.exit(1)" >> run_migrations.py
+
+
       - name: Login to Azure
         uses: azure/login@v2
         with:
@@ -80,29 +128,20 @@ jobs:
           # Jika Anda mengunggah file zip, Anda perlu menyertakan package: 'release.zip'
           # Jika tidak, biarkan kosong untuk default yang mengambil dari root repo
 
-      # --- LANGKAH BARU: Jalankan Migrasi Database ---
-      # Perbaikan: Menggunakan `az webapp deployment run-command` untuk menjalankan perintah di container
-      - name: 'Run Database Migrations'
-        uses: azure/cli@v1 # Menggunakan Azure CLI
-        with:
-          inlineScript: |
-            echo "Attempting to run database migrations using az webapp deployment run-command..."
-            # Perintah `az webapp deployment run-command` menjalankan perintah di dalam container aplikasi.
-            # Pastikan path ke virtual environment dan flask db benar di dalam container.
-            # Perintah ini akan dieksekusi dari direktori /home/site/wwwroot/
-            az webapp deployment run-command \
-              --name 'be-restro-api' \
-              --resource-group 'RG-RestroApp' \
-              --command "source /antenv/bin/activate && flask db upgrade" \
-              --query result[0].message # Menampilkan output dari perintah
-            echo "Database migrations command executed. Check App Service logs for full output."
-
+      # --- LANGKAH PENTING BARU: Jalankan Migrasi Database secara Langsung dari Runner ---
+      - name: 'Run Database Migrations Directly from Runner'
+        run: python run_migrations.py
+        env:
+          # Pastikan DATABASE_URL ini adalah secrets.AZURE_POSTGRES_DATABASE_URL
+          # Anda perlu menambahkan secrets.AZURE_POSTGRES_DATABASE_URL sebagai GitHub Secret.
+          DATABASE_URL: ${{ secrets.AZURE_POSTGRES_DATABASE_URL }}
+      
       # --- Opsional: Pastikan App Service dimulai ulang jika migrasi mengubah dependensi ---
-      # Perbaikan: Menghilangkan 'run' dan hanya menggunakan 'uses' dengan 'inlineScript'
+      # Ini tetap direkomendasikan setelah migrasi yang mengubah skema DB
       - name: 'Restart App Service (Optional but Recommended)'
         uses: azure/cli@v1 # Menggunakan Azure CLI untuk menjalankan perintah restart
         with:
-          inlineScript: | # Menggunakan inlineScript untuk menjalankan perintah az cli
+          inlineScript: |
             echo "Restarting App Service..."
             az webapp restart --name 'be-restro-api' --resource-group 'RG-RestroApp'
             echo "App Service restart command sent."
