@@ -7,7 +7,7 @@ name: Build and deploy Python app to Azure Web App - be-restro-api
 on:
   push:
     branches:
-      - main # Anda bisa tambahkan branch lain jika diperlukan (misal: develop)
+      - main
   workflow_dispatch:
 
 jobs:
@@ -22,7 +22,7 @@ jobs:
       - name: Set up Python version
         uses: actions/setup-python@v5
         with:
-          python-version: '3.10' # Pastikan versi Python ini sama dengan yang di App Service
+          python-version: '3.10'
 
       - name: Create and start virtual environment
         run: |
@@ -64,101 +64,18 @@ jobs:
       - name: Unzip artifact for deployment
         run: unzip release.zip
 
-      # --- Langkah baru: Setup Python dan Install Dependensi untuk Migrasi di Runner ---
-      # Ini diperlukan agar runner bisa menjalankan flask db upgrade secara langsung
-      - name: Set up Python for deploy job
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.10' # Pastikan versi Python ini sama dengan yang di build job dan App Service
-
-      - name: Install database migration dependencies for runner
-        # Menginstal semua dependensi dari requirements.txt, termasuk Alembic dan Psycopg2
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt 
-
-      # --- Langkah baru: Buat script Python untuk menjalankan migrasi ---
-      # Script ini akan memanggil Alembic secara programatik
-      - name: Create run_migrations.py script
-        run: |
-          echo "import os" > run_migrations.py
-          echo "import logging" >> run_migrations.py
-          echo "from alembic.config import Config" >> run_migrations.py
-          echo "from alembic import command" >> run_migrations.py
-          echo "import sys" >> run_migrations.py
-          echo "" >> run_migrations.py
-          echo "def run_alembic_upgrade(config_path):" >> run_migrations.py
-          echo "    # Konfigurasi logging dasar untuk memastikan output" >> run_migrations.py
-          echo "    logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')" >> run_migrations.py
-          echo "" >> run_migrations.py
-          echo "    database_url = os.getenv('DATABASE_URL')" >> run_migrations.py
-          echo "    if not database_url:" >> run_migrations.py
-          echo "        raise ValueError('DATABASE_URL environment variable is not set. Cannot run migrations.')" >> run_migrations.py
-          echo "" >> run_migrations.py
-          echo "    # Gunakan path file konfigurasi yang diberikan" >> run_migrations.py
-          echo "    alembic_cfg = Config(config_path)" >> run_migrations.py
-          # script_location harus menunjuk ke folder "migrations" itu sendiri
-          echo "    alembic_cfg.set_main_option('script_location', 'migrations')" >> run_migrations.py
-          echo "    alembic_cfg.set_main_option('sqlalchemy.url', database_url)" >> run_migrations.py
-          echo "" >> run_migrations.py
-          echo "    try:" >> run_migrations.py
-          echo "        print(f'Running Alembic upgrade on: {database_url}')" >> run_migrations.py
-          echo "        command.upgrade(alembic_cfg, 'head')" >> run_migrations.py
-          echo "        print('Alembic upgrade completed successfully.')" >> run_migrations.py
-          echo "    except Exception as e:" >> run_migrations.py
-          echo "        print(f'Error during Alembic upgrade: {e}')" >> run_migrations.py
-          echo "        sys.exit(1)" >> run_migrations.py
-          echo "" >> run_migrations.py
-          echo "if __name__ == '__main__':" >> run_migrations.py
-          echo "    if len(sys.argv) < 2:" >> run_migrations.py
-          echo "        print('Usage: python run_migrations.py <path_to_alembic_ini_file>') " >> run_migrations.py
-          echo "        sys.exit(1)" >> run_migrations.py
-          echo "    " >> run_migrations.py
-          echo "    config_file_to_use = sys.argv[1]" >> run_migrations.py
-          echo "    run_alembic_upgrade(config_file_to_use)" >> run_migrations.py
-
-
+      
       - name: Login to Azure
         uses: azure/login@v2
         with:
           client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_89B1EA6FC8A7461F8452A0B63808CE6D }}
           tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_C363485F2C2642C38010965BB0B371C5 }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_A83469A03A3A4DF8AA3A88543CB7D6A6 }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_A83469A03A344DF8AA3A88543CB7D6A6 }}
 
       - name: 'Deploy to Azure Web App'
         uses: azure/webapps-deploy@v3
         id: deploy-to-webapp
         with:
-          app-name: 'be-restro-api' # Ganti dengan nama App Service Anda jika berbeda
+          app-name: 'be-restro-api'
           slot-name: 'Production'
-          # Jika Anda mengunggah file zip, Anda perlu menyertakan package: 'release.zip'
-          # Jika tidak, biarkan kosong untuk default yang mengambil dari root repo
-
-      # --- LANGKAH PENTING BARU: Jalankan Migrasi Database secara Langsung dari Runner ---
-      - name: 'Run Database Migrations Directly from Runner'
-        run: |
-          echo "Attempting to filter alembic.ini for logging sections..."
-          # Membuat file alembic_filtered_for_ci.ini di root runner
-          # Perbaikan: Menggunakan path lengkap ke alembic.ini (migrations/alembic.ini)
-          # Ini akan menghapus semua baris dari [loggers] sampai akhir file
-          sed -e '/^\[loggers\]/,$d' migrations/alembic.ini > alembic_filtered_for_ci.ini # <--- MODIFIKASI PENTING INI
           
-          echo "Filtered alembic.ini created as alembic_filtered_for_ci.ini"
-          
-          # Jalankan script migrasi dengan file alembic.ini yang sudah difilter
-          python run_migrations.py alembic_filtered_for_ci.ini
-        env:
-          # Pastikan DATABASE_URL ini adalah secrets.AZURE_POSTGRES_DATABASE_URL
-          # Anda perlu menambahkan secrets.AZURE_POSTGRES_DATABASE_URL sebagai GitHub Secret.
-          DATABASE_URL: ${{ secrets.AZURE_POSTGRES_DATABASE_URL }}
-      
-      # --- Opsional: Pastikan App Service dimulai ulang jika migrasi mengubah dependensi ---
-      # Ini tetap direkomendasikan setelah migrasi yang mengubah skema DB
-      - name: 'Restart App Service (Optional but Recommended)'
-        uses: azure/cli@v1 # Menggunakan Azure CLI untuk menjalankan perintah restart
-        with:
-          inlineScript: |
-            echo "Restarting App Service..."
-            az webapp restart --name 'be-restro-api' --resource-group 'RG-RestroApp'
-            echo "App Service restart command sent."
-
