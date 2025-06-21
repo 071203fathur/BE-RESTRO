@@ -85,17 +85,18 @@ jobs:
           echo "from alembic.config import Config" >> run_migrations.py
           echo "from alembic import command" >> run_migrations.py
           echo "from dotenv import load_dotenv" >> run_migrations.py
+          echo "import logging" >> run_migrations.py # <--- TAMBAH INI
           echo "" >> run_migrations.py
           echo "def run_alembic_upgrade():" >> run_migrations.py
+          echo "    # PERBAIKAN: Konfigurasi logging dasar untuk menghindari error 'formatters'" >> run_migrations.py
+          echo "    logging.basicConfig(level=logging.INFO)" >> run_migrations.py # <--- TAMBAH INI
+          echo "" >> run_migrations.py
           echo "    database_url = os.getenv('DATABASE_URL')" >> run_migrations.py
           echo "    if not database_url:" >> run_migrations.py
           echo "        raise ValueError('DATABASE_URL environment variable is not set. Cannot run migrations.')" >> run_migrations.py
           echo "" >> run_migrations.py
-          echo "    # PERBAIKAN: Set script_location secara eksplisit" >> run_migrations.py
           echo "    alembic_cfg = Config('alembic.ini')" >> run_migrations.py
-          echo "    # Set script_location ke path relatif dari direktori proyek ke folder migrations" >> run_migrations.py
-          echo "    # Asumsi alembic.ini dan folder migrations ada di root proyek" >> run_migrations.py
-          echo "    alembic_cfg.set_main_option('script_location', 'migrations')" >> run_migrations.py # <--- TAMBAH INI
+          echo "    alembic_cfg.set_main_option('script_location', 'migrations')" >> run_migrations.py
           echo "" >> run_migrations.py
           echo "    alembic_cfg.set_main_option('sqlalchemy.url', database_url)" >> run_migrations.py
           echo "" >> run_migrations.py
