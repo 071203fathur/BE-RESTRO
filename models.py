@@ -1,12 +1,13 @@
 # models.py
 # TERBARU: Penambahan model PolaMakan dan penyesuaian relasi LaporanRehabilitasi.
+# PERUBAHAN BARU: Menambahkan model Badge, UserBadge, dan kolom poin untuk gamifikasi.
 
 from app import db, bcrypt
 from datetime import datetime, date
 from sqlalchemy.orm import validates
 import enum
 from utils.azure_helpers import get_blob_url
-from utils.gcs_helpers import get_gcs_url # Import helper GCS baru
+from utils.gcs_helpers import get_gcs_url
 
 # Enum untuk Status Program
 class ProgramStatus(str, enum.Enum):
@@ -24,6 +25,7 @@ class AppUser(db.Model):
     email = db.Column(db.String(120), unique=True, nullable=False, index=True)
     password_hash = db.Column(db.String(128), nullable=False)
     role = db.Column(db.String(10), nullable=False, index=True)
+    total_points = db.Column(db.Integer, default=0, nullable=False) # <--- TAMBAH INI
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     patient_profile = db.relationship('PatientProfile', back_populates='user', uselist=False, cascade="all, delete-orphan")
     # Relasi ke PolaMakan yang dibuat oleh terapis
@@ -43,7 +45,8 @@ class AppUser(db.Model):
             'username': self.username,
             'nama_lengkap': self.nama_lengkap,
             'email': self.email,
-            'role': self.role
+            'role': self.role,
+            'total_points': self.total_points # <--- TAMBAH INI
         }
 
 # Model PatientProfile
@@ -99,7 +102,7 @@ class Gerakan(db.Model):
     blob_name_foto = db.Column(db.String(255), nullable=True)
     blob_name_video = db.Column(db.String(255), nullable=True)
     # Kolom untuk menyimpan URI GCS untuk model TFLite
-    gcs_uri_model_tflite = db.Column(db.String(255), nullable=True) 
+    gcs_uri_model_tflite = db.Column(db.String(255), nullable=True)
     created_by_terapis_id = db.Column(db.Integer, db.ForeignKey('app_users.id', ondelete='SET NULL'), nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -107,7 +110,7 @@ class Gerakan(db.Model):
 
     def serialize_simple(self):
         return {"id": self.id, "nama_gerakan": self.nama_gerakan}
-        
+
     def serialize_full(self):
         pembuat_info = self.pembuat.serialize_basic() if self.pembuat else None
         return {
@@ -159,7 +162,7 @@ class ProgramRehabilitasi(db.Model):
                 gerakan_data['urutan_dalam_program'] = detail.urutan
                 gerakan_data['program_gerakan_detail_id'] = detail.id
                 list_gerakan_direncanakan_details.append(gerakan_data)
-        
+
         terapis_info = self.terapis.serialize_basic() if self.terapis else None
         pasien_info = self.pasien.serialize_basic() if self.pasien else None
 
@@ -175,7 +178,7 @@ class ProgramRehabilitasi(db.Model):
             }
             for detail_hasil in self.laporan_hasil.detail_hasil_gerakan.order_by(LaporanGerakanHasil.urutan_gerakan_dalam_program.asc(), LaporanGerakanHasil.id.asc()).all():
                 laporan_terkait_summary["detail_hasil_gerakan_aktual"].append(detail_hasil.serialize())
-            
+
             total_sempurna = sum(d.jumlah_sempurna or 0 for d in self.laporan_hasil.detail_hasil_gerakan)
             total_tidak_sempurna = sum(d.jumlah_tidak_sempurna or 0 for d in self.laporan_hasil.detail_hasil_gerakan)
             total_tidak_terdeteksi = sum(d.jumlah_tidak_terdeteksi or 0 for d in self.laporan_hasil.detail_hasil_gerakan)
@@ -220,6 +223,7 @@ class LaporanRehabilitasi(db.Model):
     tanggal_laporan = db.Column(db.Date, nullable=False, default=date.today)
     total_waktu_rehabilitasi_detik = db.Column(db.Integer, nullable=True)
     catatan_pasien_laporan = db.Column(db.Text, nullable=True)
+    points_earned = db.Column(db.Integer, default=0, nullable=False) # <--- TAMBAH INI
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     pasien = db.relationship('AppUser', foreign_keys=[pasien_id], backref='laporan_rehabilitasi_pasien')
     terapis_yang_assign = db.relationship('AppUser', foreign_keys=[terapis_id], backref='laporan_rehabilitasi_terapis')
@@ -238,7 +242,7 @@ class LaporanRehabilitasi(db.Model):
         detail_gerakan_list = []
         for detail_hasil in self.detail_hasil_gerakan.order_by(LaporanGerakanHasil.urutan_gerakan_dalam_program.asc(), LaporanGerakanHasil.id.asc()).all():
             detail_gerakan_list.append(detail_hasil.serialize())
-        
+
         pasien_info = self.pasien.serialize_basic() if self.pasien else {}
         program_asli_info = self.program_rehab.serialize_simple() if self.program_rehab else {} # Menggunakan program_rehab
 
@@ -246,7 +250,7 @@ class LaporanRehabilitasi(db.Model):
         total_hitung_tidak_sempurna = sum(d['jumlah_tidak_sempurna'] for d in detail_gerakan_list)
         total_hitung_tidak_terdeteksi = sum(d['jumlah_tidak_terdeteksi'] for d in detail_gerakan_list)
         nama_terapis_program = self.program_rehab.terapis.nama_lengkap if self.program_rehab and self.program_rehab.terapis else "N/A" # Menggunakan program_rehab
-        
+
         return {
             "laporan_id": self.id, "pasien_info": pasien_info,
             "program_info": {"id": program_asli_info.get("id"), "nama_program": program_asli_info.get("nama_program"), "nama_terapis_program": nama_terapis_program},
@@ -255,6 +259,7 @@ class LaporanRehabilitasi(db.Model):
             "total_waktu_rehabilitasi_string": self.format_durasi(self.total_waktu_rehabilitasi_detik),
             "total_waktu_rehabilitasi_detik": self.total_waktu_rehabilitasi_detik,
             "catatan_pasien_laporan": self.catatan_pasien_laporan,
+            "points_earned": self.points_earned, # <--- TAMBAH INI
             "detail_hasil_gerakan": detail_gerakan_list,
             "summary_total_hitungan": {"sempurna": total_hitung_sempurna, "tidak_sempurna": total_hitung_tidak_sempurna, "tidak_terdeteksi": total_hitung_tidak_terdeteksi},
             "created_at": self.created_at.isoformat() if self.created_at else None
@@ -318,3 +323,48 @@ class PolaMakan(db.Model):
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }
+
+# NEW MODEL: Badge
+class Badge(db.Model):
+    __tablename__ = 'badges'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), unique=True, nullable=False)
+    description = db.Column(db.Text, nullable=True)
+    point_threshold = db.Column(db.Integer, nullable=False, unique=True) # Poin yang dibutuhkan untuk mendapatkan badge ini
+    filename_image = db.Column(db.String(255), nullable=True) # Nama file gambar badge di Azure Blob Storage
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow) # <--- TAMBAH INI
+
+    def serialize(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "description": self.description,
+            "point_threshold": self.point_threshold,
+            "image_url": get_blob_url(self.filename_image), # Menggunakan helper Azure Anda
+            "created_at": self.created_at.isoformat() if self.created_at else None, # <--- TAMBAH INI
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None # <--- TAMBAH INI
+        }
+
+# NEW MODEL: UserBadge
+class UserBadge(db.Model):
+    __tablename__ = 'user_badges'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('app_users.id', ondelete='CASCADE'), nullable=False)
+    badge_id = db.Column(db.Integer, db.ForeignKey('badges.id', ondelete='CASCADE'), nullable=False)
+    awarded_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    user = db.relationship('AppUser', backref=db.backref('badges_earned', lazy=True, cascade="all, delete-orphan"))
+    badge = db.relationship('Badge', backref=db.backref('awarded_to_users', lazy=True))
+
+    # Pastikan kombinasi user_id dan badge_id adalah unik
+    __table_args__ = (db.UniqueConstraint('user_id', 'badge_id', name='_user_badge_uc'),)
+
+    def serialize(self):
+        return {
+            "id": self.id,
+            "user_id": self.user_id,
+            "badge_info": self.badge.serialize() if self.badge else None,
+            "awarded_at": self.awarded_at.isoformat() if self.awarded_at else None
+        }
+

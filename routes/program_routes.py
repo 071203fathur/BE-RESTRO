@@ -1,7 +1,7 @@
 # routes/program_routes.py
-# TERBARU: Menampilkan foto pasien dan diagnosis di endpoint /pasien-list
+# TERBARU: Menampilkan foto pasien, diagnosis, DAN TOTAL POIN di endpoint /pasien-list
 # Menambahkan endpoint baru /program/patient-info/<int:pasien_id>
-# untuk mendapatkan info pasien dasar.
+# untuk mendapatkan info pasien dasar, sekarang termasuk total_points.
 
 from flask import Blueprint, request, jsonify
 from models import db, AppUser, Gerakan, ProgramRehabilitasi, ProgramGerakanDetail, ProgramStatus, PatientProfile
@@ -15,7 +15,7 @@ program_bp = Blueprint('program_bp', __name__)
 def get_pasien_list_for_terapis():
     """
     Endpoint untuk terapis mendapatkan daftar pasien (untuk dropdown program),
-    sekarang termasuk foto profil dan diagnosis pasien.
+    sekarang termasuk foto profil, diagnosis pasien, dan total poin.
     """
     current_user_identity = get_jwt_identity()
     if current_user_identity.get('role') != 'terapis':
@@ -36,6 +36,7 @@ def get_pasien_list_for_terapis():
             "nama_lengkap": user.nama_lengkap,
             "email": user.email,
             "role": user.role,
+            "total_points": user.total_points, # <--- TAMBAH INI
         }
         
         # Tambahkan data dari PatientProfile jika ada
@@ -54,7 +55,7 @@ def get_pasien_list_for_terapis():
 @jwt_required()
 def get_patient_info_for_program_context(pasien_id):
     """
-    Endpoint untuk mendapatkan informasi dasar pasien (termasuk foto dan diagnosis)
+    Endpoint untuk mendapatkan informasi dasar pasien (termasuk foto, diagnosis, dan total poin)
     dalam konteks modul program. Dapat diakses oleh terapis.
     """
     current_user_identity = get_jwt_identity()
@@ -78,6 +79,7 @@ def get_patient_info_for_program_context(pasien_id):
         "nama_lengkap": user.nama_lengkap,
         "email": user.email,
         "role": user.role,
+        "total_points": user.total_points, # <--- TAMBAH INI
     }
 
     if profile:

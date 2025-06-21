@@ -2,7 +2,7 @@
 # tambah
 import os
 import uuid
-from flask import current_app
+from flask import current_app # <--- PASTIKAN INI ADA
 # 1. Import tambahan: BlobClient dan ContentSettings
 from azure.storage.blob import BlobServiceClient, BlobClient, ContentSettings
 
@@ -10,6 +10,8 @@ def _get_blob_service_client():
     """Membuat dan mengembalikan client untuk Azure Blob Service."""
     connect_str = os.getenv('AZURE_STORAGE_CONNECTION_STRING')
     if not connect_str:
+        # Menggunakan current_app.logger untuk logging
+        current_app.logger.error("AZURE_STORAGE_CONNECTION_STRING environment variable not set.")
         raise ValueError("AZURE_STORAGE_CONNECTION_STRING environment variable not set.")
     return BlobServiceClient.from_connection_string(connect_str)
 
@@ -31,7 +33,7 @@ def upload_file_to_blob(file_storage, subfolder_path):
     """
     Mengunggah file ke subfolder tertentu di Azure Blob Storage.
     :param file_storage: Objek file dari request.files.
-    :param subfolder_path: Path tujuan di dalam container, contoh: 'gerakan/foto'.
+    :param subfolder_path: Path tujuan di dalam container, contoh: 'gerakan/foto' atau 'badges'.
     :return: Tuple (nama_blob, error_message). nama_blob adalah path lengkap di container.
     """
     if not file_storage or not file_storage.filename:
@@ -47,13 +49,10 @@ def upload_file_to_blob(file_storage, subfolder_path):
 
         blob_client = blob_service_client.get_blob_client(container=container_name, blob=blob_name)
 
-        # 2. PERBAIKAN: Gunakan ContentSettings untuk mengatur content_type
-        # Ini adalah cara yang benar untuk versi library saat ini.
         content_settings = ContentSettings(content_type=file_storage.content_type)
         
         file_storage.seek(0)
         
-        # 3. PERBAIKAN: Gunakan argumen 'content_settings' bukan 'blob_properties'
         blob_client.upload_blob(file_storage.read(), content_settings=content_settings)
 
         return blob_name, None
@@ -72,10 +71,11 @@ def delete_blob(blob_name):
         container_name = os.getenv('AZURE_STORAGE_CONTAINER_NAME')
         blob_client = blob_service_client.get_blob_client(container=container_name, blob=blob_name)
         blob_client.delete_blob()
+        current_app.logger.info(f"Successfully deleted blob '{blob_name}'.") # <--- TAMBAH LOGGING INI
         return True
     except Exception as e:
         if "BlobNotFound" in str(e):
-             current_app.logger.warning(f"Blob '{blob_name}' not found for deletion, but proceeding.")
+             current_app.logger.warning(f"Blob '{blob_name}' not found for deletion, but proceeding as if deleted.") # <--- TAMBAH LOGGING INI
              return True
         current_app.logger.error(f"Failed to delete blob '{blob_name}': {str(e)}")
         return False

@@ -1,12 +1,20 @@
 # BE-RESTRO/routes/laporan_routes.py
+# PERUBAHAN BARU: Menambahkan perhitungan poin dan logika pemberian badge.
+
 from flask import Blueprint, request, jsonify
-from models import db, AppUser, ProgramRehabilitasi, LaporanRehabilitasi, LaporanGerakanHasil, ProgramStatus, ProgramGerakanDetail
+from models import db, AppUser, ProgramRehabilitasi, LaporanRehabilitasi, LaporanGerakanHasil, ProgramStatus, ProgramGerakanDetail, Badge, UserBadge # <--- TAMBAH Badge, UserBadge
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from datetime import datetime, date
+from sqlalchemy import asc # <--- TAMBAH INI
 
 laporan_bp = Blueprint('laporan_bp', __name__)
 
-@laporan_bp.route('/submit', methods=['POST']) 
+# Konfigurasi poin (bisa dipindahkan ke config atau variabel global di app.py jika ingin lebih fleksibel)
+POIN_SEMPURNA = 10
+POIN_TIDAK_SEMPURNA = 5
+POIN_TIDAK_TERDETEKSI = 1 # Atau 0 jika Anda tidak ingin memberikan poin sama sekali
+
+@laporan_bp.route('/submit', methods=['POST'])
 @jwt_required()
 def submit_laporan_rehabilitasi():
     current_user_identity = get_jwt_identity()
@@ -25,9 +33,20 @@ def submit_laporan_rehabilitasi():
     program_asli = ProgramRehabilitasi.query.get_or_404(program_rehabilitasi_id)
     if program_asli.pasien_id != pasien_id:
         return jsonify({"msg": "Anda tidak berhak mengirim laporan untuk program ini"}), 403
-    
+
     if LaporanRehabilitasi.query.filter_by(program_rehabilitasi_id=program_rehabilitasi_id).first():
         return jsonify({"msg": "Laporan untuk program ini sudah pernah disubmit."}), 409
+
+    # Hitung total poin dari laporan ini
+    total_poin_laporan_ini = 0
+    for item_hasil in detail_hasil_input:
+        jumlah_sempurna = item_hasil.get('jumlah_sempurna', 0)
+        jumlah_tidak_sempurna = item_hasil.get('jumlah_tidak_sempurna', 0)
+        jumlah_tidak_terdeteksi = item_hasil.get('jumlah_tidak_terdeteksi', 0)
+
+        total_poin_laporan_ini += (jumlah_sempurna * POIN_SEMPURNA) + \
+                                   (jumlah_tidak_sempurna * POIN_TIDAK_SEMPURNA) + \
+                                   (jumlah_tidak_terdeteksi * POIN_TIDAK_TERDETEKSI)
 
     new_laporan = LaporanRehabilitasi(
         program_rehabilitasi_id=program_rehabilitasi_id,
@@ -35,12 +54,13 @@ def submit_laporan_rehabilitasi():
         terapis_id=program_asli.terapis_id,
         tanggal_laporan=date.today(),
         total_waktu_rehabilitasi_detik=data.get('total_waktu_rehabilitasi_detik'),
-        catatan_pasien_laporan=data.get('catatan_pasien_laporan')
+        catatan_pasien_laporan=data.get('catatan_pasien_laporan'),
+        points_earned=total_poin_laporan_ini # <--- SIMPAN POIN YANG DIDAPATKAN
     )
-    
+
     try:
         db.session.add(new_laporan)
-        db.session.flush()
+        db.session.flush() # Flush untuk mendapatkan ID laporan sebelum commit penuh
 
         for item_hasil in detail_hasil_input:
             gerakan_id = item_hasil.get('gerakan_id')
@@ -62,17 +82,38 @@ def submit_laporan_rehabilitasi():
                 waktu_aktual_per_gerakan_detik=waktu_aktual_per_gerakan_detik
             )
             db.session.add(detail_laporan)
-        
+
+        # Update total_points pasien di tabel AppUser
+        pasien_user = AppUser.query.get(pasien_id)
+        if pasien_user:
+            pasien_user.total_points += total_poin_laporan_ini
+
+            # Logika pemberian badge
+            # Ambil semua badge yang ambang batasnya sudah terpenuhi oleh total_points user
+            # Diurutkan berdasarkan point_threshold secara ascending agar badge tingkat rendah dicek duluan
+            available_badges = Badge.query.filter(
+                Badge.point_threshold <= pasien_user.total_points
+            ).order_by(asc(Badge.point_threshold)).all()
+
+            for badge in available_badges:
+                # Cek apakah user sudah punya badge ini
+                has_badge = UserBadge.query.filter_by(user_id=pasien_id, badge_id=badge.id).first()
+                if not has_badge:
+                    new_user_badge = UserBadge(user_id=pasien_id, badge_id=badge.id)
+                    db.session.add(new_user_badge)
+                    # Opsional: Anda bisa menambahkan logika notifikasi di sini (misal: kirim ke log, atau queue untuk notif ke frontend)
+                    print(f"DEBUG: Pasien {pasien_user.username} mendapatkan badge: {badge.name}!")
+
         program_asli.status = ProgramStatus.SELESAI
         program_asli.updated_at = datetime.utcnow()
-        
+
         db.session.commit()
-        
+
         return jsonify({
-            "msg": "Laporan berhasil disubmit", 
+            "msg": "Laporan berhasil disubmit",
             "data_laporan": new_laporan.serialize_full()
         }), 201
-    
+
     except Exception as e:
         db.session.rollback()
         return jsonify({"msg": "Gagal menyimpan laporan", "error": str(e)}), 500
@@ -105,7 +146,7 @@ def get_laporan_history_pasien():
     current_user_identity = get_jwt_identity()
     if current_user_identity.get('role') != 'pasien':
         return jsonify({"msg": "Akses ditolak"}), 403
-    
+
     pasien_id = current_user_identity.get('id')
     page = request.args.get('page', 1, type=int)
     per_page = request.args.get('per_page', 10, type=int)
@@ -113,7 +154,7 @@ def get_laporan_history_pasien():
     paginated_laporan = LaporanRehabilitasi.query.filter_by(pasien_id=pasien_id)\
         .order_by(LaporanRehabilitasi.tanggal_laporan.desc(), LaporanRehabilitasi.created_at.desc())\
         .paginate(page=page, per_page=per_page, error_out=False)
-    
+
     results = [l.serialize_full() for l in paginated_laporan.items]
 
     return jsonify({
@@ -129,13 +170,13 @@ def get_laporan_history_by_pasien_for_terapis(target_pasien_id):
     current_user_identity = get_jwt_identity()
     if current_user_identity.get('role') != 'terapis':
         return jsonify({"msg": "Akses ditolak"}), 403
-    
+
     terapis_id = current_user_identity.get('id')
 
     # Periksa apakah terapis ini terkait dengan pasien melalui program
     # Atau jika terapis boleh melihat semua laporan (sesuaikan logika)
     pasien_user = AppUser.query.filter_by(id=target_pasien_id, role='pasien').first_or_404("Pasien tidak ditemukan.")
-    
+
     # Otorisasi: Terapis hanya bisa melihat laporan dari pasien yang pernah di-assign program olehnya
     # Jika ingin terapis bisa melihat semua laporan pasien (hapus kondisi `ProgramRehabilitasi.terapis_id == terapis_id`)
     authorized_pasien = ProgramRehabilitasi.query.filter_by(pasien_id=target_pasien_id, terapis_id=terapis_id).first()
@@ -149,7 +190,7 @@ def get_laporan_history_by_pasien_for_terapis(target_pasien_id):
     paginated_laporan = LaporanRehabilitasi.query.filter_by(pasien_id=target_pasien_id)\
         .order_by(LaporanRehabilitasi.tanggal_laporan.desc(), LaporanRehabilitasi.created_at.desc())\
         .paginate(page=page, per_page=per_page, error_out=False)
-    
+
     results = [l.serialize_full() for l in paginated_laporan.items]
 
     return jsonify({
@@ -159,3 +200,4 @@ def get_laporan_history_by_pasien_for_terapis(target_pasien_id):
         "total_pages": paginated_laporan.pages,
         "current_page": paginated_laporan.page
     }), 200
+
