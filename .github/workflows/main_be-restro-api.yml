@@ -90,7 +90,7 @@ jobs:
             # Pastikan Anda sudah mengizinkan koneksi SSH di App Service (biasanya default)
             # Dan Anda telah mengaktifkan "Allow Azure services to access this server" di database PostgreSQL Anda
             echo "Attempting to run database migrations..."
-            az webapp ssh --name 'be-restro-api' --resource-group 'RG-RestroApp' --command "source /antenv/bin/activate && flask db upgrade" # Ganti dengan nama Resource Group Anda
+            az webapp ssh --name 'be-restro-api' --resource-group 'RG-RestroApp' --command "source /antenv/bin/activate && flask db upgrade"
             echo "Database migrations command sent."
             # Catatan: Perintah ini mungkin tidak menunjukkan output langsung dari migrasi
             # Anda bisa memeriksa log App Service untuk detail lebih lanjut
@@ -100,9 +100,12 @@ jobs:
           # Anda bisa menemukannya di Azure Portal, di Overview App Service Anda.
 
       # --- Opsional: Pastikan App Service dimulai ulang jika migrasi mengubah dependensi ---
-      # Beberapa kasus membutuhkan restart eksplisit setelah migrasi besar
+      # Perbaikan: Menghilangkan 'run' dan hanya menggunakan 'uses' dengan 'inlineScript'
       - name: 'Restart App Service (Optional but Recommended)'
-        run: |
-          az webapp restart --name 'be-restro-api' --resource-group 'RG-RestroApp' # Ganti dengan nama Resource Group Anda
         uses: azure/cli@v1 # Menggunakan Azure CLI untuk menjalankan perintah restart
+        with:
+          inlineScript: | # Menggunakan inlineScript untuk menjalankan perintah az cli
+            echo "Restarting App Service..."
+            az webapp restart --name 'be-restro-api' --resource-group 'RG-RestroApp'
+            echo "App Service restart command sent."
 
