@@ -82,31 +82,64 @@ jobs:
       - name: Create run_migrations.py script
         run: |
           echo "import os" > run_migrations.py
+          echo "import shutil" >> run_migrations.py # <--- TAMBAH INI
           echo "from alembic.config import Config" >> run_migrations.py
           echo "from alembic import command" >> run_migrations.py
           echo "from dotenv import load_dotenv" >> run_migrations.py
           echo "import logging" >> run_migrations.py
           echo "" >> run_migrations.py
           echo "def run_alembic_upgrade():" >> run_migrations.py
-          echo "    # PERBAIKAN: Konfigurasi logging dasar untuk menghindari error 'formatters' dan memastikan output" >> run_migrations.py
-          echo "    logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')" >> run_migrations.py # <--- MODIFIKASI INI
+          echo "    logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')" >> run_migrations.py
           echo "" >> run_migrations.py
           echo "    database_url = os.getenv('DATABASE_URL')" >> run_migrations.py
           echo "    if not database_url:" >> run_migrations.py
           echo "        raise ValueError('DATABASE_URL environment variable is not set. Cannot run migrations.')" >> run_migrations.py
           echo "" >> run_migrations.py
-          echo "    alembic_cfg = Config('alembic.ini')" >> run_migrations.py
+          echo "    # --- PERBAIKAN PENTING UNTUK MENGATASI ERROR 'formatters' ---" >> run_migrations.py
+          echo "    # Membuat file alembic.ini sementara tanpa bagian logging" >> run_migrations.py
+          echo "    original_alembic_ini_path = 'alembic.ini'" >> run_migrations.py
+          echo "    temp_alembic_ini_path = 'alembic_temp_no_logging.ini'" >> run_migrations.py
+          echo "" >> run_migrations.py
+          echo "    try:" >> run_migrations.py
+          echo "        with open(original_alembic_ini_path, 'r') as f_orig:" >> run_migrations.py
+          echo "            lines = f_orig.readlines()" >> run_migrations.py
+          echo "        " >> run_migrations.py
+          echo "        new_lines = []" >> run_migrations.py
+          echo "        in_logging_section = False" >> run_migrations.py
+          echo "        for line in lines:" >> run_migrations.py
+          echo "            # Deteksi awal bagian logging" >> run_migrations.py
+          echo "            if line.strip() == '[loggers]' or line.strip() == '[handlers]' or line.strip() == '[formatters]':" >> run_migrations.py
+          echo "                in_logging_section = True" >> run_migrations.py
+          echo "                continue # Lewati header bagian logging" >> run_migrations.py
+          echo "            # Deteksi akhir bagian logging atau awal bagian baru" >> run_migrations.py
+          echo "            elif in_logging_section and line.strip().startswith('['):" >> run_migrations.py
+          echo "                in_logging_section = False" >> run_migrations.py
+          echo "            " >> run_migrations.py
+          echo "            if not in_logging_section:" >> run_migrations.py
+          echo "                new_lines.append(line) " >> run_migrations.py
+          echo "" >> run_migrations.py
+          echo "        with open(temp_alembic_ini_path, 'w') as f_temp:" >> run_migrations.py
+          echo "            f_temp.writelines(new_lines)" >> run_migrations.py
+          echo "" >> run_migrations.py
+          echo "        # Gunakan file sementara untuk konfigurasi Alembic" >> run_migrations.py
+          echo "        alembic_cfg = Config(temp_alembic_ini_path)" >> run_migrations.py # <--- Gunakan temp file
+          echo "" >> run_migrations.py
+          echo "    except Exception as e:" >> run_migrations.py
+          echo "        logging.error(f'Could not process alembic.ini for logging removal: {e}. Falling back to original alembic.ini.')" >> run_migrations.py
+          echo "        # Fallback ke alembic.ini asli jika ada masalah dalam memprosesnya" >> run_migrations.py
+          echo "        alembic_cfg = Config(original_alembic_ini_path)" >> run_migrations.py
+          echo "" >> run_migrations.py
           echo "    alembic_cfg.set_main_option('script_location', 'migrations')" >> run_migrations.py
-          echo "" >> run_migrations.py
-          echo "    # PERBAIKAN PENTING: Mencegah Alembic membaca konfigurasi logging dari alembic.ini" >> run_migrations.py
-          echo "    alembic_cfg.set_main_option('file_config_name', 'alembic.ini')" >> run_migrations.py # <--- TAMBAH INI
-          echo "    alembic_cfg.set_main_option('logging_config_name', '')" >> run_migrations.py # <--- TAMBAH INI (Kosongkan untuk tidak menggunakan logging dari file)
-          echo "" >> run_migrations.py
           echo "    alembic_cfg.set_main_option('sqlalchemy.url', database_url)" >> run_migrations.py
           echo "" >> run_migrations.py
-          echo "    print(f'Running Alembic upgrade on: {database_url}')" >> run_migrations.py
-          echo "    command.upgrade(alembic_cfg, 'head')" >> run_migrations.py
-          echo "    print('Alembic upgrade completed successfully.')" >> run_migrations.py
+          echo "    try:" >> run_migrations.py
+          echo "        print(f'Running Alembic upgrade on: {database_url}')" >> run_migrations.py
+          echo "        command.upgrade(alembic_cfg, 'head')" >> run_migrations.py
+          echo "        print('Alembic upgrade completed successfully.')" >> run_migrations.py
+          echo "    finally:" >> run_migrations.py
+          echo "        # Hapus file sementara setelah selesai" >> run_migrations.py
+          echo "        if os.path.exists(temp_alembic_ini_path):" >> run_migrations.py
+          echo "            os.remove(temp_alembic_ini_path)" >> run_migrations.py
           echo "" >> run_migrations.py
           echo "if __name__ == '__main__':" >> run_migrations.py
           echo "    try:" >> run_migrations.py
