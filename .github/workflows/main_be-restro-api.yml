@@ -84,21 +84,21 @@ jobs:
           echo "import os" > run_migrations.py
           echo "from alembic.config import Config" >> run_migrations.py
           echo "from alembic import command" >> run_migrations.py
-          echo "from dotenv import load_dotenv" >> run_migrations.py # Untuk keamanan, meskipun tidak akan memuat langsung di GitHub Actions
+          echo "from dotenv import load_dotenv" >> run_migrations.py
           echo "" >> run_migrations.py
           echo "def run_alembic_upgrade():" >> run_migrations.py
-          echo "    # DATABASE_URL akan diambil dari environment variables yang disetel oleh GitHub Actions" >> run_migrations.py
           echo "    database_url = os.getenv('DATABASE_URL')" >> run_migrations.py
           echo "    if not database_url:" >> run_migrations.py
           echo "        raise ValueError('DATABASE_URL environment variable is not set. Cannot run migrations.')" >> run_migrations.py
           echo "" >> run_migrations.py
-          echo "    # Asumsikan alembic.ini berada di root direktori proyek" >> run_migrations.py
+          echo "    # PERBAIKAN: Set script_location secara eksplisit" >> run_migrations.py
           echo "    alembic_cfg = Config('alembic.ini')" >> run_migrations.py
+          echo "    # Set script_location ke path relatif dari direktori proyek ke folder migrations" >> run_migrations.py
+          echo "    # Asumsi alembic.ini dan folder migrations ada di root proyek" >> run_migrations.py
+          echo "    alembic_cfg.set_main_option('script_location', 'migrations')" >> run_migrations.py # <--- TAMBAH INI
           echo "" >> run_migrations.py
-          echo "    # Mengatur URL database di konfigurasi Alembic" >> run_migrations.py
           echo "    alembic_cfg.set_main_option('sqlalchemy.url', database_url)" >> run_migrations.py
           echo "" >> run_migrations.py
-          echo "    # Menjalankan perintah upgrade Alembic ke head (versi terbaru)" >> run_migrations.py
           echo "    print(f'Running Alembic upgrade on: {database_url}')" >> run_migrations.py
           echo "    command.upgrade(alembic_cfg, 'head')" >> run_migrations.py
           echo "    print('Alembic upgrade completed successfully.')" >> run_migrations.py
