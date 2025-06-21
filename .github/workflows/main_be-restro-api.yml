@@ -97,8 +97,8 @@ jobs:
           echo "" >> run_migrations.py
           echo "    # Gunakan path file konfigurasi yang diberikan" >> run_migrations.py
           echo "    alembic_cfg = Config(config_path)" >> run_migrations.py
-          # Perbaikan: script_location harus menunjuk ke folder "migrations" itu sendiri
-          echo "    alembic_cfg.set_main_option('script_location', 'migrations')" >> run_migrations.py # Tetap seperti ini
+          # script_location harus menunjuk ke folder "migrations" itu sendiri
+          echo "    alembic_cfg.set_main_option('script_location', 'migrations')" >> run_migrations.py
           echo "    alembic_cfg.set_main_option('sqlalchemy.url', database_url)" >> run_migrations.py
           echo "" >> run_migrations.py
           echo "    try:" >> run_migrations.py
@@ -123,7 +123,7 @@ jobs:
         with:
           client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_89B1EA6FC8A7461F8452A0B63808CE6D }}
           tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_C363485F2C2642C38010965BB0B371C5 }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_A83469A03A344DF8AA3A88543CB7D6A6 }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_A83469A03A3A4DF8AA3A88543CB7D6A6 }}
 
       - name: 'Deploy to Azure Web App'
         uses: azure/webapps-deploy@v3
@@ -140,16 +140,13 @@ jobs:
           echo "Attempting to filter alembic.ini for logging sections..."
           # Membuat file alembic_filtered_for_ci.ini di root runner
           # Perbaikan: Menggunakan path lengkap ke alembic.ini (migrations/alembic.ini)
-          sed -e '/^\[loggers\]/,/^\[[^]]*\]/ { /^\[loggers\]/! { /^\[[^]]*\]/!d; }; }' \
-              -e '/^\[handlers\]/,/^\[[^]]*\]/ { /^\[handlers\]/! { /^\[[^]]*\]/!d; }; }' \
-              -e '/^\[formatters\]/,/^\[[^]]*\]/ { /^\[formatters\]/! { /^\[[^]]*\]/!d; }; }' \
-              migrations/alembic.ini > alembic_filtered_for_ci.ini # <--- MODIFIKASI INI
+          # Ini akan menghapus semua baris dari [loggers] sampai akhir file
+          sed -e '/^\[loggers\]/,$d' migrations/alembic.ini > alembic_filtered_for_ci.ini # <--- MODIFIKASI PENTING INI
           
           echo "Filtered alembic.ini created as alembic_filtered_for_ci.ini"
           
           # Jalankan script migrasi dengan file alembic.ini yang sudah difilter
-          # Perbaikan: Jalankan script dari root, yang akan menggunakan alembic_filtered_for_ci.ini
-          python run_migrations.py alembic_filtered_for_ci.ini # <--- MODIFIKASI INI (path argumen sudah benar)
+          python run_migrations.py alembic_filtered_for_ci.ini
         env:
           # Pastikan DATABASE_URL ini adalah secrets.AZURE_POSTGRES_DATABASE_URL
           # Anda perlu menambahkan secrets.AZURE_POSTGRES_DATABASE_URL sebagai GitHub Secret.
