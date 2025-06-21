@@ -81,23 +81,21 @@ jobs:
           # Jika tidak, biarkan kosong untuk default yang mengambil dari root repo
 
       # --- LANGKAH BARU: Jalankan Migrasi Database ---
-      # Langkah ini akan dijalankan setelah deployment kode selesai
+      # Perbaikan: Menggunakan `az webapp run-command` untuk menjalankan perintah di container
       - name: 'Run Database Migrations'
-        uses: azure/cli@v1 # Menggunakan Azure CLI untuk menjalankan perintah SSH di App Service
+        uses: azure/cli@v1 # Menggunakan Azure CLI
         with:
           inlineScript: |
-            # Menggunakan `az webapp ssh` untuk terhubung dan menjalankan perintah
-            # Pastikan Anda sudah mengizinkan koneksi SSH di App Service (biasanya default)
-            # Dan Anda telah mengaktifkan "Allow Azure services to access this server" di database PostgreSQL Anda
-            echo "Attempting to run database migrations..."
-            az webapp ssh --name 'be-restro-api' --resource-group 'RG-RestroApp' --command "source /antenv/bin/activate && flask db upgrade"
-            echo "Database migrations command sent."
-            # Catatan: Perintah ini mungkin tidak menunjukkan output langsung dari migrasi
-            # Anda bisa memeriksa log App Service untuk detail lebih lanjut
-
-          # -- CATATAN PENTING UNTUK RESOURCE GROUP --
-          # Ganti '<Nama_Resource_Group_Anda>' di atas dengan nama Resource Group Azure Anda.
-          # Anda bisa menemukannya di Azure Portal, di Overview App Service Anda.
+            echo "Attempting to run database migrations using az webapp run-command..."
+            # Perintah `az webapp run-command` menjalankan perintah di dalam container aplikasi.
+            # Pastikan path ke virtual environment dan flask db benar di dalam container.
+            # Perintah ini akan dieksekusi dari direktori /home/site/wwwroot/
+            az webapp run-command \
+              --name 'be-restro-api' \
+              --resource-group 'RG-RestroApp' \
+              --command "source /antenv/bin/activate && flask db upgrade" \
+              --query result[0].message # Menampilkan output dari perintah
+            echo "Database migrations command executed. Check App Service logs for full output."
 
       # --- Opsional: Pastikan App Service dimulai ulang jika migrasi mengubah dependensi ---
       # Perbaikan: Menghilangkan 'run' dan hanya menggunakan 'uses' dengan 'inlineScript'
