@@ -85,11 +85,11 @@ jobs:
           echo "from alembic.config import Config" >> run_migrations.py
           echo "from alembic import command" >> run_migrations.py
           echo "from dotenv import load_dotenv" >> run_migrations.py
-          echo "import logging" >> run_migrations.py # <--- TAMBAH INI
+          echo "import logging" >> run_migrations.py
           echo "" >> run_migrations.py
           echo "def run_alembic_upgrade():" >> run_migrations.py
-          echo "    # PERBAIKAN: Konfigurasi logging dasar untuk menghindari error 'formatters'" >> run_migrations.py
-          echo "    logging.basicConfig(level=logging.INFO)" >> run_migrations.py # <--- TAMBAH INI
+          echo "    # PERBAIKAN: Konfigurasi logging dasar untuk menghindari error 'formatters' dan memastikan output" >> run_migrations.py
+          echo "    logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')" >> run_migrations.py # <--- MODIFIKASI INI
           echo "" >> run_migrations.py
           echo "    database_url = os.getenv('DATABASE_URL')" >> run_migrations.py
           echo "    if not database_url:" >> run_migrations.py
@@ -97,6 +97,10 @@ jobs:
           echo "" >> run_migrations.py
           echo "    alembic_cfg = Config('alembic.ini')" >> run_migrations.py
           echo "    alembic_cfg.set_main_option('script_location', 'migrations')" >> run_migrations.py
+          echo "" >> run_migrations.py
+          echo "    # PERBAIKAN PENTING: Mencegah Alembic membaca konfigurasi logging dari alembic.ini" >> run_migrations.py
+          echo "    alembic_cfg.set_main_option('file_config_name', 'alembic.ini')" >> run_migrations.py # <--- TAMBAH INI
+          echo "    alembic_cfg.set_main_option('logging_config_name', '')" >> run_migrations.py # <--- TAMBAH INI (Kosongkan untuk tidak menggunakan logging dari file)
           echo "" >> run_migrations.py
           echo "    alembic_cfg.set_main_option('sqlalchemy.url', database_url)" >> run_migrations.py
           echo "" >> run_migrations.py
