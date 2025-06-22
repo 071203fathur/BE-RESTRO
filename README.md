@@ -1,2901 +1,2284 @@
 Dokumentasi API Backend - BE-RESTRO (Aplikasi Kesehatan)
+========================================================
 
-Dokumen ini menjelaskan semua endpoint API yang tersedia untuk backend aplikasi kesehatan BE-RESTRO.
+Dokumen ini menjelaskan semua *endpoint* API yang tersedia untuk backend aplikasi kesehatan BE-RESTRO.
 
-Base URL: https://be-restro-api-fnfpghddbka7d4aw.eastasia-01.azurewebsites.net
+**Base URL:**  `https://be-restro-api-fnfpghddbka7d4aw.eastasia-01.azurewebsites.net`
 
-Format Data Umum:
+**Format Data Umum:**
 
-Request body untuk POST dan PUT umumnya menggunakan format application/json, kecuali untuk upload file yang menggunakan multipart/form-data.
+-   *Request body* untuk `POST` dan `PUT` umumnya menggunakan format `application/json`, kecuali untuk *upload* file yang menggunakan `multipart/form-data`.
 
-Response body selalu dalam format application/json.
+-   *Response body* selalu dalam format `application/json`.
 
-Autentikasi:
+**Autentikasi:**
 
-Sebagian besar endpoint memerlukan autentikasi menggunakan JSON Web Token (JWT).
+-   Sebagian besar *endpoint* memerlukan autentikasi menggunakan JSON Web Token (JWT).
 
-Kirim token JWT di header Authorization dengan format Bearer <TOKEN_ANDA>.
+-   Kirim token JWT di *header*  `Authorization` dengan format `Bearer <TOKEN_ANDA>`.
 
 1\. API untuk Semua Pengguna (Terapis & Pasien)
+-----------------------------------------------
 
-Bagian ini berisi endpoint yang dapat diakses oleh pengguna dengan peran Terapis maupun Pasien, setelah mereka terautentikasi.
+Bagian ini berisi *endpoint* yang dapat diakses oleh pengguna dengan peran Terapis maupun Pasien, setelah mereka terautentikasi.
 
-1.1 Autentikasi (/auth)
+### 1.1 Autentikasi (`/auth`)
 
-Endpoint yang berkaitan dengan registrasi, login, dan logout pengguna.
+*Endpoint* yang berkaitan dengan registrasi, *login*, dan *logout* pengguna.
 
-1.1.1 Registrasi Terapis
+#### 1.1.1 Registrasi Terapis
 
-Method: POST
+-   **Method:**  `POST`
 
-URL: /auth/terapis/register
+-   **URL:**  `/auth/terapis/register`
 
-Deskripsi: Mendaftarkan pengguna baru sebagai terapis.
+-   **Deskripsi:** Mendaftarkan pengguna baru sebagai terapis.
 
-Headers:
+-   **Headers:**
 
-Content-Type: application/json
+    -   `Content-Type: application/json`
 
-Request Body:
+-   **Request Body:**
 
-{
+    ```
+    {
+      "username": "terapis_handal",
+      "nama_lengkap": "Dr. Terapis Handal",
+      "email": "terapis.handal@example.com",
+      "password": "passwordkuat123"
+    }
 
-  "username": "terapis_handal",
+    ```
 
-  "nama_lengkap": "Dr. Terapis Handal",
+-   **Response Sukses (201 Created):**
 
-  "email": "terapis.handal@example.com",
+    ```
+    {
+      "msg": "Registrasi terapis berhasil",
+      "user": {
+        "id": 1,
+        "username": "terapis_handal",
+        "nama_lengkap": "Dr. Terapis Handal",
+        "email": "terapis.handal@example.com",
+        "role": "terapis"
+      }
+    }
 
-  "password": "passwordkuat123"
+    ```
 
-}
+-   **Response Error:**
 
-Response Sukses (201 Created):
+    -   `400 Bad Request`: Data tidak lengkap atau format salah.
 
-{
+    -   `409 Conflict`: *Username* atau *email* sudah terdaftar.
 
-  "msg": "Registrasi terapis berhasil",
+    -   `500 Internal Server Error`: Kesalahan *server*.
 
-  "user": {
+#### 1.1.2 Login Terapis
 
-    "id": 1,
+-   **Method:**  `POST`
 
-    "username": "terapis_handal",
+-   **URL:**  `/auth/terapis/login`
 
-    "nama_lengkap": "Dr. Terapis Handal",
+-   **Deskripsi:**  *Login* untuk pengguna terapis.
 
-    "email": "terapis.handal@example.com",
+-   **Headers:**
 
-    "role": "terapis"
+    -   `Content-Type: application/json`
 
-  }
+-   **Request Body:**
 
-}
+    ```
+    {
+      "identifier": "terapis.handal@example.com", // Bisa email atau username
+      "password": "passwordkuat123"
+    }
 
-Response Error:
+    ```
 
-400 Bad Request: Data tidak lengkap atau format salah.
+-   **Response Sukses (200 OK):**
 
-409 Conflict: Username atau email sudah terdaftar.
+    ```
+    {
+      "access_token": "<TOKEN_JWT_ANDA>",
+      "user": {
+        "id": 1,
+        "username": "terapis_handal",
+        "nama_lengkap": "Dr. Terapis Handal",
+        "email": "terapis.handal@example.com",
+        "role": "terapis"
+      }
+    }
 
-500 Internal Server Error: Kesalahan server.
+    ```
 
-1.1.2 Login Terapis
+-   **Response Error:**
 
-Method: POST
+    -   `400 Bad Request`: *Identifier* atau *password* tidak diisi.
 
-URL: /auth/terapis/login
+    -   `401 Unauthorized`: *Identifier* atau *password* salah.
 
-Deskripsi: Login untuk pengguna terapis.
+#### 1.1.3 Registrasi Pasien
 
-Headers:
+-   **Method:**  `POST`
 
-Content-Type: application/json
+-   **URL:**  `/auth/pasien/register`
 
-Request Body:
+-   **Deskripsi:** Mendaftarkan pengguna baru sebagai pasien.
 
-{
+-   **Headers:**
 
-  "identifier": "terapis.handal@example.com", // Bisa email atau username
+    -   `Content-Type: application/json`
 
-  "password": "passwordkuat123"
+-   **Request Body:**
 
-}
+    ```
+    {
+      "username": "pasien_rajin",
+      "nama_lengkap": "Budi Pasien Rajin",
+      "email": "pasien.rajin@example.com",
+      "password": "passwordpasien789",
+      "nomor_telepon": "081234567890" // Opsional
+    }
 
-Response Sukses (200 OK):
+    ```
 
-{
+-   **Response Sukses (201 Created):**
 
-  "access_token": "<TOKEN_JWT_ANDA>",
+    ```
+    {
+      "msg": "Registrasi pasien berhasil",
+      "user": {
+        "id": 2,
+        "username": "pasien_rajin",
+        "nama_lengkap": "Budi Pasien Rajin",
+        "email": "pasien.rajin@example.com",
+        "role": "pasien"
+      }
+    }
 
-  "user": {
+    ```
 
-    "id": 1,
+-   **Response Error:** Sama seperti registrasi terapis.
 
-    "username": "terapis_handal",
+#### 1.1.4 Login Pasien
 
-    "nama_lengkap": "Dr. Terapis Handal",
+-   **Method:**  `POST`
 
-    "email": "terapis.handal@example.com",
+-   **URL:**  `/auth/pasien/login`
 
-    "role": "terapis"
+-   **Deskripsi:**  *Login* untuk pengguna pasien.
 
-  }
+-   **Headers:**
 
-}
+    -   `Content-Type: application/json`
 
-Response Error:
+-   **Request Body:**
 
-400 Bad Request: Identifier atau password tidak diisi.
+    ```
+    {
+      "identifier": "pasien.rajin@example.com", // Bisa email atau username
+      "password": "passwordpasien789"
+    }
 
-401 Unauthorized: Identifier atau password salah.
+    ```
 
-1.1.3 Registrasi Pasien
+-   **Response Sukses (200 OK):**
 
-Method: POST
+    ```
+    {
+      "access_token": "<TOKEN_JWT_ANDA>",
+      "user": {
+        "id": 2,
+        "username": "pasien_rajin",
+        "nama_lengkap": "Budi Pasien Rajin",
+        "email": "pasien.rajin@example.com",
+        "role": "pasien"
+      }
+    }
 
-URL: /auth/pasien/register
+    ```
 
-Deskripsi: Mendaftarkan pengguna baru sebagai pasien.
+-   **Response Error:** Sama seperti *login* terapis.
 
-Headers:
+#### 1.1.5 Logout
 
-Content-Type: application/json
+-   **Method:**  `POST`
 
-Request Body:
+-   **URL:**  `/auth/logout`
 
-{
+-   **Deskripsi:**  *Logout* pengguna. Sisi *server* tidak benar-benar "menghapus" token JWT standar, tetapi *endpoint* ini bisa digunakan untuk *logging* atau jika menggunakan mekanisme *blocklist* token.
 
-  "username": "pasien_rajin",
+-   **Headers:**
 
-  "nama_lengkap": "Budi Pasien Rajin",
+    -   `Authorization: Bearer <TOKEN_PENGGUNA>`
 
-  "email": "pasien.rajin@example.com",
+-   **Request Body:** Kosong.
 
-  "password": "passwordpasien789",
+-   **Response Sukses (200 OK):**
 
-  "nomor_telepon": "081234567890" // Opsional
+    ```
+    {
+      "msg": "User 'username_pengguna' logged out. Harap hapus token di sisi client."
+    }
 
-}
+    ```
 
-Response Sukses (201 Created):
+-   **Response Error:**
 
-{
+    -   `401 Unauthorized`: Token tidak valid atau tidak ada.
 
-  "msg": "Registrasi pasien berhasil",
+### 1.2 Manajemen Gerakan (`/api/gerakan`)
 
-  "user": {
+*Endpoint* untuk terapis mengelola perpustakaan gerakan rehabilitasi, dan pasien melihat daftar gerakan.
 
-    "id": 2,
+#### 1.2.1 Dapatkan Semua Gerakan
 
-    "username": "pasien_rajin",
+-   **Method:**  `GET`
 
-    "nama_lengkap": "Budi Pasien Rajin",
+-   **URL:**  `/api/gerakan/`
 
-    "email": "pasien.rajin@example.com",
+-   **Deskripsi:** Mendapatkan daftar semua gerakan. Mendukung paginasi dan pencarian.
 
-    "role": "pasien"
+-   **Headers:**
 
-  }
+    -   `Authorization: Bearer <TOKEN_PENGGUNA>`
 
-}
+-   **Query Parameters (Opsional):**
 
-Response Error: Sama seperti registrasi terapis.
+    -   `page` (integer, default: 1): Halaman ke-
 
-1.1.4 Login Pasien
+    -   `per_page` (integer, default: 10): Jumlah item per halaman
 
-Method: POST
+    -   `search` (string): Kata kunci pencarian berdasarkan nama gerakan
 
-URL: /auth/pasien/login
+-   **Response Sukses (200 OK):**
 
-Deskripsi: Login untuk pengguna pasien.
+    ```
+    {
+      "gerakan": [
+        {
+          "id": 1,
+          "nama_gerakan": "Angkat Kaki Lurus",
+          "deskripsi": "Berbaring, angkat satu kaki lurus ke atas.",
+          "url_foto": "https://<azure_storage_account>.blob.core.windows.net/<container>/gerakan/foto/uuid_namafile.jpg",
+          "url_video": "https://<azure_storage_account>.blob.core.windows.net/<container>/gerakan/video/uuid_namafile.mp4",
+          "url_model_tflite": "https://storage.googleapis.com/<gcs_bucket_name>/trained_tflite_models/model_uuid_namafile.tflite",
+          "created_by_terapis": { "id": 1, "username": "terapis_handal", "nama_lengkap": "Dr. Terapis Handal", "email": "terapis.handal@example.com", "role": "terapis" },
+          "created_at": "2025-06-05T11:00:00.000000",
+          "updated_at": "2025-06-05T11:00:00.000000"
+        }
+      ],
+      "total_items": 1,
+      "total_pages": 1,
+      "current_page": 1
+    }
 
-Headers:
+    ```
 
-Content-Type: application/json
+-   **Response Error:**  `401 Unauthorized`.
 
-Request Body:
+#### 1.2.2 Dapatkan Detail Gerakan
 
-{
+-   **Method:**  `GET`
 
-  "identifier": "pasien.rajin@example.com", // Bisa email atau username
+-   **URL:**  `/api/gerakan/<int:gerakan_id>`
 
-  "password": "passwordpasien789"
+-   **Deskripsi:** Mendapatkan detail satu gerakan berdasarkan ID.
 
-}
+-   **URL Parameters:**
 
-Response Sukses (200 OK):
+    -   `gerakan_id` (integer, wajib): ID unik gerakan.
 
-{
+-   **Headers:**
 
-  "access_token": "<TOKEN_JWT_ANDA>",
+    -   `Authorization: Bearer <TOKEN_PENGGUNA>`
 
-  "user": {
+-   **Response Sukses (200 OK):**
 
-    "id": 2,
+    ```
+    {
+      "id": 1,
+      "nama_gerakan": "Angkat Kaki Lurus",
+      "deskripsi": "Berbaring, angkat satu kaki lurus ke atas.",
+      "url_foto": "https://<azure_storage_account>.blob.core.windows.net/<container>/gerakan/foto/uuid_namafile.jpg",
+      "url_video": "https://<azure_storage_account>.blob.core.windows.net/<container>/gerakan/video/uuid_namafile.mp4",
+      "url_model_tflite": "https://storage.googleapis.com/<gcs_bucket_name>/trained_tflite_models/model_uuid_namafile.tflite",
+      "created_by_terapis": { "id": 1, "username": "terapis_handal", "nama_lengkap": "Dr. Terapis Handal", "email": "terapis.handal@example.com", "role": "terapis" },
+      "created_at": "2025-06-05T11:00:00.000000",
+      "updated_at": "2025-06-05T11:00:00.000000"
+    }
 
-    "username": "pasien_rajin",
+    ```
 
-    "nama_lengkap": "Budi Pasien Rajin",
+-   **Response Error:**
 
-    "email": "pasien.rajin@example.com",
+    -   `401 Unauthorized`.
 
-    "role": "pasien"
+    -   `404 Not Found`: Gerakan tidak ditemukan.
 
-  }
+### 1.3 Penyajian File Media (`/media/gerakan`)
 
-}
+*Endpoint* ini tidak memerlukan autentikasi JWT agar file bisa diakses langsung oleh tag `<img>` atau `<video>` di frontend/mobile.
 
-Response Error: Sama seperti login terapis.
+#### 1.3.1 Sajikan Foto Gerakan
 
-1.1.5 Logout
+-   **Method:**  `GET`
 
-Method: POST
+-   **URL:**  `/media/gerakan/foto/<path:filename>`
 
-URL: /auth/logout
+-   **Deskripsi:** Mengakses file foto gerakan. `filename` adalah nama unik file yang disimpan (misal: `uuid_namafile.jpg`).
 
-Deskripsi: Logout pengguna. Sisi server tidak benar-benar "menghapus" token JWT standar, tetapi endpoint ini bisa digunakan untuk logging atau jika menggunakan mekanisme blocklist token.
+-   **Response:** File gambar.
 
-Headers:
+#### 1.3.2 Sajikan Video Gerakan
 
-Authorization: Bearer <TOKEN_PENGGUNA>
+-   **Method:**  `GET`
 
-Request Body: Kosong.
+-   **URL:**  `/media/gerakan/video/<path:filename>`
 
-Response Sukses (200 OK):
+-   **Deskripsi:** Mengakses file video gerakan. `filename` adalah nama unik file yang disimpan (misal: `uuid_namafile.mp4`).
 
-{
+-   **Response:** File video.
 
-  "msg": "User 'username_pengguna' logged out. Harap hapus token di sisi client."
+#### 1.3.3 Sajikan Model `.tflite` Gerakan
 
-}
+-   **Method:**  `GET`
 
-Response Error:
+-   **URL:**  `/media/gerakan/model_tflite/<path:filename>`
 
-401 Unauthorized: Token tidak valid atau tidak ada.
+-   **Deskripsi:** Mengakses file model `.tflite` gerakan. `filename` adalah nama unik file yang disimpan (misal: `model_uuid_namafile.tflite`).
 
-1.2 Manajemen Gerakan (/api/gerakan)
+-   **Response:** File `.tflite`.
 
-Endpoint untuk terapis mengelola perpustakaan gerakan rehabilitasi, dan pasien melihat daftar gerakan.
+#### 1.3.4 Dapatkan Detail Laporan
 
-1.2.1 Dapatkan Semua Gerakan
+-   **Method:**  `GET`
 
-Method: GET
+-   **URL:**  `/api/laporan/<int:laporan_id>`
 
-URL: /api/gerakan/
+-   **Deskripsi:** Mendapatkan detail satu laporan rehabilitasi. Bisa diakses oleh pasien pemilik atau terapis yang terkait dengan program.
 
-Deskripsi: Mendapatkan daftar semua gerakan. Mendukung paginasi dan pencarian.
+-   **URL Parameters:**
 
-Headers:
+    -   `laporan_id` (integer, wajib): ID unik laporan.
 
-Authorization: Bearer <TOKEN_PENGGUNA>
+-   **Headers:**
 
-Query Parameters (Opsional):
+    -   `Authorization: Bearer <TOKEN_PENGGUNA>`
 
-page (integer, default: 1): Halaman ke-
+-   **Response Sukses (200 OK):**
 
-per_page (integer, default: 10): Jumlah item per halaman
+    ```
+    {
+      "laporan_id": 1,
+      "pasien_info": { "id": 2, "username": "pasien_rajin", "nama_lengkap": "Budi Pasien Rajin", "email": "pasien.rajin@example.com", "role": "pasien" },
+      "program_info": { "id": 1, "nama_program": "Rehabilitasi Lutut Minggu ke-2", "nama_terapis_program": "Dr. Terapis Handal" },
+      "tanggal_program_direncanakan": "2025-06-12",
+      "tanggal_laporan_disubmit": "2025-06-12",
+      "total_waktu_rehabilitasi_string": "30:00",
+      "total_waktu_rehabilitasi_detik": 1800,
+      "catatan_pasien_laporan": "Semua gerakan terasa baik, sedikit pegal.",
+      "detail_hasil_gerakan": [
+        {
+          "laporan_gerakan_id": 1,
+          "nama_gerakan": "Angkat Kaki Lurus",
+          "jumlah_repetisi_direncanakan": 12,
+          "jumlah_sempurna": 10,
+          "jumlah_tidak_sempurna": 2,
+          "jumlah_tidak_terdeteksi": 0,
+          "waktu_aktual_per_gerakan_detik": 300
+        }
+        // ... detail gerakan lainnya ...
+      ],
+      "summary_total_hitungan": { "sempurna": 25, "tidak_sempurna": 2, "tidak_terdeteksi": 0 },
+      "created_at": "2025-06-12T10:00:00.000000"
+    }
 
-search (string): Kata kunci pencarian berdasarkan nama gerakan
+    ```
 
-Response Sukses (200 OK):
+-   **Response Error:**
 
-{
+    -   `401 Unauthorized`: Token tidak valid.
 
-  "gerakan": [
+    -   `403 Forbidden`: Pengguna tidak berhak melihat laporan ini.
 
-    {
+    -   `404 Not Found`: Laporan tidak ditemukan.
 
-      "id": 1,
+#### 1.3.5 Dapatkan Detail Program Spesifik
 
-      "nama_gerakan": "Angkat Kaki Lurus",
+-   **Method:**  `GET`
 
-      "deskripsi": "Berbaring, angkat satu kaki lurus ke atas.",
+-   **URL:**  `/api/program/<int:program_id>`
 
-      "url_foto": "https://<azure_storage_account>.blob.core.windows.net/<container>/gerakan/foto/uuid_namafile.jpg",
+-   **Deskripsi:** Mendapatkan detail program berdasarkan ID-nya. Bisa diakses oleh terapis pembuat atau pasien penerima.
 
-      "url_video": "https://<azure_storage_account>.blob.core.windows.net/<container>/gerakan/video/uuid_namafile.mp4",
+-   **URL Parameters:**
 
-      "url_model_tflite": "https://storage.googleapis.com/<gcs_bucket_name>/trained_tflite_models/model_uuid_namafile.tflite",
+    -   `program_id` (integer, wajib): ID unik program.
 
-      "created_by_terapis": { "id": 1, "username": "terapis_handal", "nama_lengkap": "Dr. Terapis Handal", "email": "terapis.handal@example.com", "role": "terapis" },
+-   **Headers:**
 
-      "created_at": "2025-06-05T11:00:00.000000",
+    -   `Authorization: Bearer <TOKEN_PENGGUNA>`
 
-      "updated_at": "2025-06-05T11:00:00.000000"
+-   **Response Sukses (200 OK):**
 
-    }
+    ```
+    {
+      "msg": "Detail program berhasil diambil",
+      "program": {
+        "id": 1,
+        "nama_program": "Rehabilitasi Lutut Minggu ke-2",
+        "tanggal_program": "2025-06-12",
+        "catatan_terapis": "Fokus pada penguatan quadrisep.",
+        "status": "belum_dimulai",
+        "terapis": { "id": 1, "username": "terapis_handal", "nama_lengkap": "Dr. Terapis Handal", "email": "terapis.handal@example.com", "role": "terapis" },
+        "pasien": { "id": 2, "username": "pasien_rajin", "nama_lengkap": "Budi Pasien Rajin", "email": "pasien.rajin@example.com", "role": "pasien" },
+        "list_gerakan_direncanakan": [
+          // ... (data gerakan lengkap) ...
+        ],
+        "created_at": "2025-06-12T09:00:00.000000",
+        "updated_at": "2025-06-12T09:00:00.000000",
+        "laporan_terkait": null
+      }
+    }
 
-  ],
+    ```
 
-  "total_items": 1,
+-   **Response Error:**
 
-  "total_pages": 1,
+    -   `401 Unauthorized`: Token tidak valid.
 
-  "current_page": 1
+    -   `403 Forbidden`: Pengguna tidak berhak mengakses program ini.
 
-}
+    -   `404 Not Found`: Program tidak ditemukan.
 
-Response Error: 401 Unauthorized.
+#### 1.3.6 Update Status Program
 
-1.2.2 Dapatkan Detail Gerakan
+-   **Method:**  `PUT`
 
-Method: GET
+-   **URL:**  `/api/program/<int:program_id>/update-status`
 
-URL: /api/gerakan/<int:gerakan_id>
+-   **Deskripsi:** Terapis atau sistem mengubah status program (misal, dari `belum_dimulai` ke `berjalan`, atau dari `berjalan` ke `dibatalkan`). Pasien juga bisa mengubah ke `berjalan`.
 
-Deskripsi: Mendapatkan detail satu gerakan berdasarkan ID.
+-   **URL Parameters:**
 
-URL Parameters:
+    -   `program_id` (integer, wajib): ID unik program.
 
-gerakan_id (integer, wajib): ID unik gerakan.
+-   **Headers:**
 
-Headers:
+    -   `Authorization: Bearer <TOKEN_PENGGUNA>`
 
-Authorization: Bearer <TOKEN_PENGGUNA>
+    -   `Content-Type: application/json`
 
-Response Sukses (200 OK):
+-   **Request Body:**
 
-{
+    ```
+    {
+      "status": "berjalan" // Pilihan: "belum_dimulai", "berjalan", "selesai", "dibatalkan"
+    }
 
-  "id": 1,
+    ```
 
-  "nama_gerakan": "Angkat Kaki Lurus",
+-   **Response Sukses (200 OK):**
 
-  "deskripsi": "Berbaring, angkat satu kaki lurus ke atas.",
+    ```
+    {
+      "msg": "Status program berhasil diubah menjadi 'berjalan'",
+      "program": {
+        "id": 1,
+        "nama_program": "Rehabilitasi Lutut Minggu ke-2",
+        "tanggal_program": "2025-06-12",
+        "status": "berjalan"
+      }
+    }
 
-  "url_foto": "https://<azure_storage_account>.blob.core.windows.net/<container>/gerakan/foto/uuid_namafile.jpg",
+    ```
 
-  "url_video": "https://<azure_storage_account>.blob.core.windows.net/<container>/gerakan/video/uuid_namafile.mp4",
+-   **Response Error:**
 
-  "url_model_tflite": "https://storage.googleapis.com/<gcs_bucket_name>/trained_tflite_models/model_uuid_namafile.tflite",
+    -   `400 Bad Request`: Status baru tidak disediakan atau tidak valid.
 
-  "created_by_terapis": { "id": 1, "username": "terapis_handal", "nama_lengkap": "Dr. Terapis Handal", "email": "terapis.handal@example.com", "role": "terapis" },
+    -   `401 Unauthorized`: Token tidak valid.
 
-  "created_at": "2025-06-05T11:00:00.000000",
+    -   `403 Forbidden`: Pengguna tidak berhak mengubah status ini (misal: pasien mencoba mengubah ke `selesai`).
 
-  "updated_at": "2025-06-05T11:00:00.000000"
+    -   `404 Not Found`: Program tidak ditemukan.
 
-}
+#### 1.3.7 Dapatkan Summary Monitoring Pasien
 
-Response Error:
+-   **Method:**  `GET`
 
-401 Unauthorized.
+-   **URL:**  `/api/monitoring/summary/pasien/<int:pasien_id>`
 
-404 Not Found: Gerakan tidak ditemukan.
+-   **Deskripsi:** Mendapatkan data ringkasan lengkap untuk *dashboard* monitoring pasien (KPI, tren, distribusi hasil gerakan, catatan terbaru, dan riwayat aktivitas).
 
-1.3 Penyajian File Media (/media/gerakan)
+-   **URL Parameters:**
 
-Endpoint ini tidak memerlukan autentikasi JWT agar file bisa diakses langsung oleh tag <img> atau <video> di frontend/mobile.
+    -   `pasien_id` (integer, wajib): ID unik pasien.
 
-1.3.1 Sajikan Foto Gerakan
+-   **Headers:**
 
-Method: GET
+    -   `Authorization: Bearer <TOKEN_PENGGUNA>` (Terapis atau Pasien pemilik)
 
-URL: /media/gerakan/foto/<path:filename>
+-   **Response Sukses (200 OK):**
 
-Deskripsi: Mengakses file foto gerakan. filename adalah nama unik file yang disimpan (misal: uuid_namafile.jpg).
+    ```
+    {
+      "pasien_info": {
+        "nama_lengkap": "Budi Pasien Rajin",
+        "id_pasien_string": "PAS002",
+        "user_id": 2,
+        "jenis_kelamin": "Laki-laki",
+        "tanggal_lahir": "15-05-1990",
+        "diagnosis": "Post-stroke ringan, pemulihan baik",
+        "catatan_tambahan_pasien": "Perlu perhatian pada gerakan motorik halus.",
+        "url_foto_profil": "https://<azure_storage_account>.blob.core.windows.net/<container>/profil/foto/uuid_namafile.jpg",
+        "total_points": 1500,
+        "highest_badge_info": {
+          "id": 1,
+          "name": "Bintang Perunggu",
+          "description": "Diberikan untuk mencapai 1000 poin.",
+          "point_threshold": 1000,
+          "image_url": "https://<azure_storage_account>.blob.core.windows.net/<container>/badges/bronze_star.png",
+          "created_at": "2025-01-01T00:00:00.000000",
+          "updated_at": "2025-01-01T00:00:00.000000"
+        }
+      },
+      "summary_kpi": {
+        "total_sesi_selesai": 5,
+        "rata_rata_akurasi_persen": 85,
+        "rata_rata_durasi_string": "25m 30s",
+        "rata_rata_durasi_detik": 1530,
+        "frekuensi_latihan_per_minggu": 3.5
+      },
+      "trends_chart": {
+        "akurasi_7_sesi_terakhir": {
+          "labels": ["29 Mei", "31 Mei", "02 Jun", "04 Jun", "05 Jun"],
+          "data": [80, 82, 85, 88, 90]
+        },
+        "durasi_7_sesi_terakhir": {
+          "labels": ["29 Mei", "31 Mei", "02 Jun", "04 Jun", "05 Jun"],
+          "data": [30, 28, 25, 26, 24]
+        }
+      },
+      "distribusi_hasil_gerakan_total": {
+        "labels": ["Sempurna", "Tidak Sempurna", "Tidak Terdeteksi"],
+        "data": [250, 30, 15]
+      },
+      "catatan_observasi_terbaru": [
+        {
+          "tanggal": "2025-06-05",
+          "catatan": "Pasien menunjukkan peningkatan signifikan minggu ini.",
+          "sumber": "Terapis (Dr. Terapis Handal) - Program: Rehabilitasi Lutut Minggu ke-2"
+        },
+        {
+          "tanggal": "2025-06-04",
+          "catatan": "Latihan hari ini terasa lebih ringan.",
+          "sumber": "Pasien - Laporan Program: Rehabilitasi Lutut Minggu ke-2"
+        }
+      ],
+      "riwayat_aktivitas_monitoring": [
+        {
+          "tanggal_program": "2025-06-05",
+          "nama_program": "Rehabilitasi Lutut Minggu ke-2",
+          "status_program": "selesai",
+          "laporan_id": 1,
+          "keterangan_sesi": "Semua gerakan terasa baik, sedikit pegal."
+        }
+      ]
+    }
 
-Response: File gambar.
+    ```
 
-1.3.2 Sajikan Video Gerakan
+-   **Response Error:**
 
-Method: GET
+    -   `401 Unauthorized`: Token tidak valid.
 
-URL: /media/gerakan/video/<path:filename>
+    -   `403 Forbidden`: Pengguna tidak berhak melihat *summary* ini.
 
-Deskripsi: Mengakses file video gerakan. filename adalah nama unik file yang disimpan (misal: uuid_namafile.mp4).
+    -   `404 Not Found`: Pasien tidak ditemukan atau belum ada laporan yang selesai.
 
-Response: File video.
+#### 1.3.8 Dapatkan Leaderboard
 
-1.3.3 Sajikan Model .tflite Gerakan
+-   **Method:**  `GET`
 
-Method: GET
+-   **URL:**  `/api/gamification/leaderboard`
 
-URL: /media/gerakan/model_tflite/<path:filename>
+-   **Deskripsi:** Endpoint untuk mendapatkan leaderboard pasien berdasarkan total poin. Dapat diakses oleh terapis dan pasien.
 
-Deskripsi: Mengakses file model .tflite gerakan. filename adalah nama unik file yang disimpan (misal: model_uuid_namafile.tflite).
+-   **Headers:**
 
-Response: File .tflite.
+    -   `Authorization: Bearer <TOKEN_PENGGUNA>`
 
-1.3.4 Dapatkan Detail Laporan
+-   **Query Parameters (Opsional):**
 
-Method: GET
+    -   `page` (integer, default: 1): Halaman hasil leaderboard.
 
-URL: /api/laporan/<int:laporan_id>
+    -   `per_page` (integer, default: 10): Jumlah item per halaman.
 
-Deskripsi: Mendapatkan detail satu laporan rehabilitasi. Bisa diakses oleh pasien pemilik atau terapis yang terkait dengan program.
+-   **Response Sukses (200 OK):**
 
-URL Parameters:
+    ```
+    {
+      "leaderboard": [
+        {
+          "user_id": 1,
+          "username": "pasien_hebat",
+          "nama_lengkap": "Pasien Hebat",
+          "total_points": 2500,
+          "highest_badge_info": {
+            "id": 2,
+            "name": "Bintang Perak",
+            "description": "Diberikan untuk mencapai 2000 poin.",
+            "point_threshold": 2000,
+            "image_url": "https://<azure_storage_account>.blob.core.windows.net/<container>/badges/silver_star.png",
+            "created_at": "2025-02-01T00:00:00.000000",
+            "updated_at": "2025-02-01T00:00:00.000000"
+          }
+        },
+        {
+          "user_id": 2,
+          "username": "pasien_rajin",
+          "nama_lengkap": "Budi Pasien Rajin",
+          "total_points": 1500,
+          "highest_badge_info": {
+            "id": 1,
+            "name": "Bintang Perunggu",
+            "description": "Diberikan untuk mencapai 1000 poin.",
+            "point_threshold": 1000,
+            "image_url": "https://<azure_storage_account>.blob.core.windows.net/<container>/badges/bronze_star.png",
+            "created_at": "2025-01-01T00:00:00.000000",
+            "updated_at": "2025-01-01T00:00:00.000000"
+          }
+        }
+      ],
+      "total_items": 2,
+      "total_pages": 1,
+      "current_page": 1
+    }
 
-laporan_id (integer, wajib): ID unik laporan.
+    ```
 
-Headers:
+-   **Response Error:**  `401 Unauthorized`.
 
-Authorization: Bearer <TOKEN_PENGGUNA>
+#### 1.3.9 Dapatkan Semua Badge
 
-Response Sukses (200 OK):
+-   **Method:**  `GET`
 
-{
+-   **URL:**  `/api/gamification/badges`
 
-  "laporan_id": 1,
+-   **Deskripsi:** Endpoint untuk mendapatkan semua daftar badge yang tersedia. Dapat diakses oleh semua role yang terautentikasi.
 
-  "pasien_info": { "id": 2, "username": "pasien_rajin", "nama_lengkap": "Budi Pasien Rajin", "email": "pasien.rajin@example.com", "role": "pasien" },
+-   **Headers:**
 
-  "program_info": { "id": 1, "nama_program": "Rehabilitasi Lutut Minggu ke-2", "nama_terapis_program": "Dr. Terapis Handal" },
+    -   `Authorization: Bearer <TOKEN_PENGGUNA>`
 
-  "tanggal_program_direncanakan": "2025-06-12",
+-   **Response Sukses (200 OK):**
 
-  "tanggal_laporan_disubmit": "2025-06-12",
+    ```
+    {
+      "badges": [
+        {
+          "id": 1,
+          "name": "Bintang Perunggu",
+          "description": "Diberikan untuk mencapai 1000 poin.",
+          "point_threshold": 1000,
+          "image_url": "https://<azure_storage_account>.blob.core.windows.net/<container>/badges/bronze_star.png",
+          "created_at": "2025-01-01T00:00:00.000000",
+          "updated_at": "2025-01-01T00:00:00.000000"
+        },
+        {
+          "id": 2,
+          "name": "Bintang Perak",
+          "description": "Diberikan untuk mencapai 2000 poin.",
+          "point_threshold": 2000,
+          "image_url": "https://<azure_storage_account>.blob.core.windows.net/<container>/badges/silver_star.png",
+          "created_at": "2025-02-01T00:00:00.000000",
+          "updated_at": "2025-02-01T00:00:00.000000"
+        }
+      ]
+    }
 
-  "total_waktu_rehabilitasi_string": "30:00",
+    ```
 
-  "total_waktu_rehabilitasi_detik": 1800,
+-   **Response Error:**  `401 Unauthorized`.
 
-  "catatan_pasien_laporan": "Semua gerakan terasa baik, sedikit pegal.",
+#### 1.3.10 Dapatkan Detail Badge
 
-  "detail_hasil_gerakan": [
+-   **Method:**  `GET`
 
-    {
+-   **URL:**  `/api/gamification/badges/<int:badge_id>`
 
-      "laporan_gerakan_id": 1,
+-   **Deskripsi:** Endpoint untuk mendapatkan detail badge spesifik.
 
-      "nama_gerakan": "Angkat Kaki Lurus",
+-   **URL Parameters:**
 
-      "jumlah_repetisi_direncanakan": 12,
+    -   `badge_id` (integer, wajib): ID unik badge.
 
-      "jumlah_sempurna": 10,
+-   **Headers:**
 
-      "jumlah_tidak_sempurna": 2,
+    -   `Authorization: Bearer <TOKEN_PENGGUNA>`
 
-      "jumlah_tidak_terdeteksi": 0,
+-   **Response Sukses (200 OK):**
 
-      "waktu_aktual_per_gerakan_detik": 300
+    ```
+    {
+      "id": 1,
+      "name": "Bintang Perunggu",
+      "description": "Diberikan untuk mencapai 1000 poin.",
+      "point_threshold": 1000,
+      "image_url": "https://<azure_storage_account>.blob.core.windows.net/<container>/badges/bronze_star.png",
+      "created_at": "2025-01-01T00:00:00.000000",
+      "updated_at": "2025-01-01T00:00:00.000000"
+    }
 
-    }
+    ```
 
-    // ... detail gerakan lainnya ...
+-   **Response Error:**
 
-  ],
+    -   `401 Unauthorized`.
 
-  "summary_total_hitungan": { "sempurna": 25, "tidak_sempurna": 2, "tidak_terdeteksi": 0 },
-
-  "created_at": "2025-06-12T10:00:00.000000"
-
-}
-
-Response Error:
-
-401 Unauthorized: Token tidak valid.
-
-403 Forbidden: Pengguna tidak berhak melihat laporan ini.
-
-404 Not Found: Laporan tidak ditemukan.
-
-1.3.5 Dapatkan Detail Program Spesifik
-
-Method: GET
-
-URL: /api/program/<int:program_id>
-
-Deskripsi: Mendapatkan detail program berdasarkan ID-nya. Bisa diakses oleh terapis pembuat atau pasien penerima.
-
-URL Parameters:
-
-program_id (integer, wajib): ID unik program.
-
-Headers:
-
-Authorization: Bearer <TOKEN_PENGGUNA>
-
-Response Sukses (200 OK):
-
-{
-
-  "msg": "Detail program berhasil diambil",
-
-  "program": {
-
-    "id": 1,
-
-    "nama_program": "Rehabilitasi Lutut Minggu ke-2",
-
-    "tanggal_program": "2025-06-12",
-
-    "catatan_terapis": "Fokus pada penguatan quadrisep.",
-
-    "status": "belum_dimulai",
-
-    "terapis": { "id": 1, "username": "terapis_handal", "nama_lengkap": "Dr. Terapis Handal", "email": "terapis.handal@example.com", "role": "terapis" },
-
-    "pasien": { "id": 2, "username": "pasien_rajin", "nama_lengkap": "Budi Pasien Rajin", "email": "pasien.rajin@example.com", "role": "pasien" },
-
-    "list_gerakan_direncanakan": [
-
-      // ... (data gerakan lengkap) ...
-
-    ],
-
-    "created_at": "2025-06-12T09:00:00.000000",
-
-    "updated_at": "2025-06-12T09:00:00.000000",
-
-    "laporan_terkait": null
-
-  }
-
-}
-
-Response Error:
-
-401 Unauthorized: Token tidak valid.
-
-403 Forbidden: Pengguna tidak berhak mengakses program ini.
-
-404 Not Found: Program tidak ditemukan.
-
-1.3.6 Update Status Program
-
-Method: PUT
-
-URL: /api/program/<int:program_id>/update-status
-
-Deskripsi: Terapis atau sistem mengubah status program (misal, dari belum_dimulai ke berjalan, atau dari berjalan ke dibatalkan). Pasien juga bisa mengubah ke berjalan.
-
-URL Parameters:
-
-program_id (integer, wajib): ID unik program.
-
-Headers:
-
-Authorization: Bearer <TOKEN_PENGGUNA>
-
-Content-Type: application/json
-
-Request Body:
-
-{
-
-  "status": "berjalan" // Pilihan: "belum_dimulai", "berjalan", "selesai", "dibatalkan"
-
-}
-
-Response Sukses (200 OK):
-
-{
-
-  "msg": "Status program berhasil diubah menjadi 'berjalan'",
-
-  "program": {
-
-    "id": 1,
-
-    "nama_program": "Rehabilitasi Lutut Minggu ke-2",
-
-    "tanggal_program": "2025-06-12",
-
-    "status": "berjalan"
-
-  }
-
-}
-
-Response Error:
-
-400 Bad Request: Status baru tidak disediakan atau tidak valid.
-
-401 Unauthorized: Token tidak valid.
-
-403 Forbidden: Pengguna tidak berhak mengubah status ini (misal: pasien mencoba mengubah ke selesai).
-
-404 Not Found: Program tidak ditemukan.
-
-1.3.7 Dapatkan Summary Monitoring Pasien
-
-Method: GET
-
-URL: /api/monitoring/summary/pasien/<int:pasien_id>
-
-Deskripsi: Mendapatkan data ringkasan lengkap untuk dashboard monitoring pasien (KPI, tren, distribusi hasil gerakan, catatan terbaru, dan riwayat aktivitas).
-
-URL Parameters:
-
-pasien_id (integer, wajib): ID unik pasien.
-
-Headers:
-
-Authorization: Bearer <TOKEN_PENGGUNA> (Terapis atau Pasien pemilik)
-
-Response Sukses (200 OK):
-
-{
-
-  "pasien_info": {
-
-    "nama_lengkap": "Budi Pasien Rajin",
-
-    "id_pasien_string": "PAS002",
-
-    "user_id": 2,
-
-    "jenis_kelamin": "Laki-laki",
-
-    "tanggal_lahir": "15-05-1990",
-
-    "diagnosis": "Post-stroke ringan, pemulihan baik",
-
-    "catatan_tambahan_pasien": "Perlu perhatian pada gerakan motorik halus.",
-
-    "url_foto_profil": "https://<azure_storage_account>.blob.core.windows.net/<container>/profil/foto/uuid_namafile.jpg",
-
-    "total_points": 1500,
-
-    "highest_badge_info": {
-
-      "id": 1,
-
-      "name": "Bintang Perunggu",
-
-      "description": "Diberikan untuk mencapai 1000 poin.",
-
-      "point_threshold": 1000,
-
-      "image_url": "https://<azure_storage_account>.blob.core.windows.net/<container>/badges/bronze_star.png",
-
-      "created_at": "2025-01-01T00:00:00.000000",
-
-      "updated_at": "2025-01-01T00:00:00.000000"
-
-    }
-
-  },
-
-  "summary_kpi": {
-
-    "total_sesi_selesai": 5,
-
-    "rata_rata_akurasi_persen": 85,
-
-    "rata_rata_durasi_string": "25m 30s",
-
-    "rata_rata_durasi_detik": 1530,
-
-    "frekuensi_latihan_per_minggu": 3.5
-
-  },
-
-  "trends_chart": {
-
-    "akurasi_7_sesi_terakhir": {
-
-      "labels": ["29 Mei", "31 Mei", "02 Jun", "04 Jun", "05 Jun"],
-
-      "data": [80, 82, 85, 88, 90]
-
-    },
-
-    "durasi_7_sesi_terakhir": {
-
-      "labels": ["29 Mei", "31 Mei", "02 Jun", "04 Jun", "05 Jun"],
-
-      "data": [30, 28, 25, 26, 24]
-
-    }
-
-  },
-
-  "distribusi_hasil_gerakan_total": {
-
-    "labels": ["Sempurna", "Tidak Sempurna", "Tidak Terdeteksi"],
-
-    "data": [250, 30, 15]
-
-  },
-
-  "catatan_observasi_terbaru": [
-
-    {
-
-      "tanggal": "2025-06-05",
-
-      "catatan": "Pasien menunjukkan peningkatan signifikan minggu ini.",
-
-      "sumber": "Terapis (Dr. Terapis Handal) - Program: Rehabilitasi Lutut Minggu ke-2"
-
-    },
-
-    {
-
-      "tanggal": "2025-06-04",
-
-      "catatan": "Latihan hari ini terasa lebih ringan.",
-
-      "sumber": "Pasien - Laporan Program: Rehabilitasi Lutut Minggu ke-2"
-
-    }
-
-  ],
-
-  "riwayat_aktivitas_monitoring": [
-
-    {
-
-      "tanggal_program": "2025-06-05",
-
-      "nama_program": "Rehabilitasi Lutut Minggu ke-2",
-
-      "status_program": "selesai",
-
-      "laporan_id": 1,
-
-      "keterangan_sesi": "Semua gerakan terasa baik, sedikit pegal."
-
-    }
-
-  ]
-
-}
-
-Response Error:
-
-401 Unauthorized: Token tidak valid.
-
-403 Forbidden: Pengguna tidak berhak melihat summary ini.
-
-404 Not Found: Pasien tidak ditemukan atau belum ada laporan yang selesai.
-
-1.3.8 Dapatkan Leaderboard
-
-Method: GET
-
-URL: /api/gamification/leaderboard
-
-Deskripsi: Endpoint untuk mendapatkan leaderboard pasien berdasarkan total poin. Dapat diakses oleh terapis dan pasien.
-
-Headers:
-
-Authorization: Bearer <TOKEN_PENGGUNA>
-
-Query Parameters (Opsional):
-
-page (integer, default: 1): Halaman hasil leaderboard.
-
-per_page (integer, default: 10): Jumlah item per halaman.
-
-Response Sukses (200 OK):
-
-{
-
-  "leaderboard": [
-
-    {
-
-      "user_id": 1,
-
-      "username": "pasien_hebat",
-
-      "nama_lengkap": "Pasien Hebat",
-
-      "total_points": 2500,
-
-      "highest_badge_info": {
-
-        "id": 2,
-
-        "name": "Bintang Perak",
-
-        "description": "Diberikan untuk mencapai 2000 poin.",
-
-        "point_threshold": 2000,
-
-        "image_url": "https://<azure_storage_account>.blob.core.windows.net/<container>/badges/silver_star.png",
-
-        "created_at": "2025-02-01T00:00:00.000000",
-
-        "updated_at": "2025-02-01T00:00:00.000000"
-
-      }
-
-    },
-
-    {
-
-      "user_id": 2,
-
-      "username": "pasien_rajin",
-
-      "nama_lengkap": "Budi Pasien Rajin",
-
-      "total_points": 1500,
-
-      "highest_badge_info": {
-
-        "id": 1,
-
-        "name": "Bintang Perunggu",
-
-        "description": "Diberikan untuk mencapai 1000 poin.",
-
-        "point_threshold": 1000,
-
-        "image_url": "https://<azure_storage_account>.blob.core.windows.net/<container>/badges/bronze_star.png",
-
-        "created_at": "2025-01-01T00:00:00.000000",
-
-        "updated_at": "2025-01-01T00:00:00.000000"
-
-      }
-
-    }
-
-  ],
-
-  "total_items": 2,
-
-  "total_pages": 1,
-
-  "current_page": 1
-
-}
-
-Response Error: 401 Unauthorized.
-
-1.3.9 Dapatkan Semua Badge
-
-Method: GET
-
-URL: /api/gamification/badges
-
-Deskripsi: Endpoint untuk mendapatkan semua daftar badge yang tersedia. Dapat diakses oleh semua role yang terautentikasi.
-
-Headers:
-
-Authorization: Bearer <TOKEN_PENGGUNA>
-
-Response Sukses (200 OK):
-
-{
-
-  "badges": [
-
-    {
-
-      "id": 1,
-
-      "name": "Bintang Perunggu",
-
-      "description": "Diberikan untuk mencapai 1000 poin.",
-
-      "point_threshold": 1000,
-
-      "image_url": "https://<azure_storage_account>.blob.core.windows.net/<container>/badges/bronze_star.png",
-
-      "created_at": "2025-01-01T00:00:00.000000",
-
-      "updated_at": "2025-01-01T00:00:00.000000"
-
-    },
-
-    {
-
-      "id": 2,
-
-      "name": "Bintang Perak",
-
-      "description": "Diberikan untuk mencapai 2000 poin.",
-
-      "point_threshold": 2000,
-
-      "image_url": "https://<azure_storage_account>.blob.core.windows.net/<container>/badges/silver_star.png",
-
-      "created_at": "2025-02-01T00:00:00.000000",
-
-      "updated_at": "2025-02-01T00:00:00.000000"
-
-    }
-
-  ]
-
-}
-
-Response Error: 401 Unauthorized.
-
-1.3.10 Dapatkan Detail Badge
-
-Method: GET
-
-URL: /api/gamification/badges/<int:badge_id>
-
-Deskripsi: Endpoint untuk mendapatkan detail badge spesifik.
-
-URL Parameters:
-
-badge_id (integer, wajib): ID unik badge.
-
-Headers:
-
-Authorization: Bearer <TOKEN_PENGGUNA>
-
-Response Sukses (200 OK):
-
-{
-
-  "id": 1,
-
-  "name": "Bintang Perunggu",
-
-  "description": "Diberikan untuk mencapai 1000 poin.",
-
-  "point_threshold": 1000,
-
-  "image_url": "https://<azure_storage_account>.blob.core.windows.net/<container>/badges/bronze_star.png",
-
-  "created_at": "2025-01-01T00:00:00.000000",
-
-  "updated_at": "2025-01-01T00:00:00.000000"
-
-}
-
-Response Error:
-
-401 Unauthorized.
-
-404 Not Found: Badge tidak ditemukan.
+    -   `404 Not Found`: Badge tidak ditemukan.
 
 2\. API Khusus Pasien
+---------------------
 
-Bagian ini berisi endpoint yang khusus ditujukan untuk pengguna dengan peran Pasien.
+Bagian ini berisi *endpoint* yang khusus ditujukan untuk pengguna dengan peran Pasien.
 
-2.1 Profil Pasien (/api/patient)
+### 2.1 Profil Pasien (`/api/patient`)
 
-Endpoint yang berkaitan dengan data profil pasien.
+*Endpoint* yang berkaitan dengan data profil pasien.
 
-2.1.1 Dapatkan Profil Pasien (Saat Ini Login)
+#### 2.1.1 Dapatkan Profil Pasien (Saat Ini Login)
 
-Method: GET
+-   **Method:**  `GET`
 
-URL: /api/patient/profile
+-   **URL:**  `/api/patient/profile`
 
-Deskripsi: Mendapatkan detail profil lengkap dari pasien yang sedang login.
+-   **Deskripsi:** Mendapatkan detail profil lengkap dari pasien yang sedang *login*.
 
-Headers:
+-   **Headers:**
 
-Authorization: Bearer <TOKEN_PASIEN>
+    -   `Authorization: Bearer <TOKEN_PASIEN>`
 
-Response Sukses (200 OK):
+-   **Response Sukses (200 OK):**
 
-{
+    ```
+    {
+      "id": 2,
+      "username": "pasien_rajin",
+      "nama_lengkap": "Budi Pasien Rajin",
+      "email": "pasien.rajin@example.com",
+      "role": "pasien",
+      "total_points": 1500,
+      "jenis_kelamin": "Laki-laki",
+      "tanggal_lahir": "1990-05-15",
+      "tempat_lahir": "Jakarta",
+      "nomor_telepon": "081234567890",
+      "alamat": "Jl. Sehat No. 1",
+      "nama_pendamping": "Siti Pendamping",
+      "diagnosis": "Post-stroke ringan",
+      "catatan_tambahan": "Perlu perhatian pada gerakan motorik halus.",
+      "tinggi_badan": 170,
+      "berat_badan": 65.5,
+      "golongan_darah": "O+",
+      "riwayat_medis": "Hipertensi terkontrol",
+      "riwayat_alergi": "Tidak ada",
+      "url_foto_profil": "https://<azure_storage_account>.blob.core.windows.net/<container>/profil/foto/uuid_namafile.jpg",
+      "updated_at": "2025-06-05T10:30:00.000000",
+      "highest_badge_info": {
+        "id": 1,
+        "name": "Bintang Perunggu",
+        "description": "Diberikan untuk mencapai 1000 poin.",
+        "point_threshold": 1000,
+        "image_url": "https://<azure_storage_account>.blob.core.windows.net/<container>/badges/bronze_star.png",
+        "created_at": "2025-01-01T00:00:00.000000",
+        "updated_at": "2025-01-01T00:00:00.000000"
+      }
+    }
 
-  "id": 2,
+    ```
 
-  "username": "pasien_rajin",
+-   **Response Error:**
 
-  "nama_lengkap": "Budi Pasien Rajin",
+    -   `401 Unauthorized`: Token tidak valid.
 
-  "email": "pasien.rajin@example.com",
+    -   `403 Forbidden`: Pengguna bukan pasien.
 
-  "role": "pasien",
+    -   `404 Not Found`: Profil pasien tidak ditemukan.
 
-  "total_points": 1500,
+#### 2.1.2 Update Profil Pasien (Saat Ini Login)
 
-  "jenis_kelamin": "Laki-laki",
+-   **Method:**  `PUT`
 
-  "tanggal_lahir": "1990-05-15",
+-   **URL:**  `/api/patient/profile`
 
-  "tempat_lahir": "Jakarta",
+-   **Deskripsi:** Memperbarui detail profil pasien yang sedang *login*.
 
-  "nomor_telepon": "081234567890",
+-   **Headers:**
 
-  "alamat": "Jl. Sehat No. 1",
+    -   `Authorization: Bearer <TOKEN_PASIEN>`
 
-  "nama_pendamping": "Siti Pendamping",
+    -   `Content-Type: application/json`
 
-  "diagnosis": "Post-stroke ringan",
+-   **Request Body** (kirim hanya *field* yang ingin diubah):
 
-  "catatan_tambahan": "Perlu perhatian pada gerakan motorik halus.",
+    ```
+    {
+      "nama_lengkap": "Budi Pasien Semangat",
+      "nomor_telepon": "08111222333",
+      "alamat": "Jl. Sehat Selalu No. 12",
+      "diagnosis": "Post-stroke ringan, pemulihan baik",
+      "tinggi_badan": 171
+    }
 
-  "tinggi_badan": 170,
+    ```
 
-  "berat_badan": 65.5,
+-   **Response Sukses (200 OK):**
 
-  "golongan_darah": "O+",
+    ```
+    {
+      "msg": "Profil berhasil diperbarui",
+      "profile": {
+        // ... (data profil lengkap yang sudah terupdate, sama seperti GET profile) ...
+      }
+    }
 
-  "riwayat_medis": "Hipertensi terkontrol",
+    ```
 
-  "riwayat_alergi": "Tidak ada",
+-   **Response Error:**
 
-  "url_foto_profil": "https://<azure_storage_account>.blob.core.windows.net/<container>/profil/foto/uuid_namafile.jpg",
+    -   `400 Bad Request`: Data tidak valid (misal format tanggal salah).
 
-  "updated_at": "2025-06-05T10:30:00.000000",
+    -   `401 Unauthorized`: Token tidak valid.
 
-  "highest_badge_info": {
+    -   `403 Forbidden`: Pengguna bukan pasien.
 
-    "id": 1,
+    -   `404 Not Found`: Profil pasien tidak ditemukan.
 
-    "name": "Bintang Perunggu",
+    -   `409 Conflict`: *Username*, *email*, atau nomor telepon baru sudah digunakan.
 
-    "description": "Diberikan untuk mencapai 1000 poin.",
+    -   `500 Internal Server Error`.
 
-    "point_threshold": 1000,
+#### 2.1.3 Upload/Update Foto Profil Pasien
 
-    "image_url": "https://<azure_storage_account>.blob.core.windows.net/<container>/badges/bronze_star.png",
+-   **Method:**  `POST` atau `PUT`
 
-    "created_at": "2025-01-01T00:00:00.000000",
+-   **URL:**  `/api/patient/profile/picture`
 
-    "updated_at": "2025-01-01T00:00:00.000000"
+-   **Deskripsi:** Mengunggah atau memperbarui foto profil pasien.
 
-  }
+-   **Headers:**
 
-}
+    -   `Authorization: Bearer <TOKEN_PASIEN>`
 
-Response Error:
+    -   `Content-Type: multipart/form-data`
 
-401 Unauthorized: Token tidak valid.
+-   **Request Body:**  `form-data`
 
-403 Forbidden: Pengguna bukan pasien.
+    -   `foto_profil` (file, wajib): (file gambar `.png`, `.jpg`, dll.)
 
-404 Not Found: Profil pasien tidak ditemukan.
+-   **Response Sukses (200 OK):**
 
-2.1.2 Update Profil Pasien (Saat Ini Login)
+    ```
+    {
+      "msg": "Foto profil berhasil diupdate",
+      "url_foto_profil": "https://<azure_storage_account>.blob.core.windows.net/<container>/profil/foto/uuid_namafile.jpg"
+    }
 
-Method: PUT
+    ```
 
-URL: /api/patient/profile
+-   **Response Error:**
 
-Deskripsi: Memperbarui detail profil pasien yang sedang login.
+    -   `400 Bad Request`: File `foto_profil` tidak ditemukan atau format file salah.
 
-Headers:
+    -   `401 Unauthorized`: Token tidak valid.
 
-Authorization: Bearer <TOKEN_PASIEN>
+    -   `403 Forbidden`: Pengguna bukan pasien.
 
-Content-Type: application/json
+    -   `404 Not Found`: Profil tidak ditemukan.
 
-Request Body (kirim hanya field yang ingin diubah):
+    -   `500 Internal Server Error`.
 
-{
+#### 2.1.4 Dapatkan Rencana Pola Makan Pasien (Tanggal Spesifik)
 
-  "nama_lengkap": "Budi Pasien Semangat",
+-   **Method:**  `GET`
 
-  "nomor_telepon": "08111222333",
+-   **URL:**  `/api/patient/diet-plan/<string:tanggal_str>`
 
-  "alamat": "Jl. Sehat Selalu No. 12",
+-   **Deskripsi:** Pasien mendapatkan rencana pola makan mereka untuk tanggal tertentu.
 
-  "diagnosis": "Post-stroke ringan, pemulihan baik",
+-   **URL Parameters:**
 
-  "tinggi_badan": 171
+    -   `tanggal_str` (string, wajib): Tanggal dalam format `YYYY-MM-DD`.
 
-}
+-   **Headers:**
 
-Response Sukses (200 OK):
+    -   `Authorization: Bearer <TOKEN_PASIEN>`
 
-{
+-   **Response Sukses (200 OK):**
 
-  "msg": "Profil berhasil diperbarui",
+    ```
+    {
+      "id": 1,
+      "pasien_id": 2,
+      "nama_pasien": "Budi Pasien Rajin",
+      "terapis_id": 1,
+      "nama_terapis": "Dr. Terapis Handal",
+      "tanggal_makan": "2025-06-12",
+      "menu_pagi": "Oatmeal dengan buah beri",
+      "menu_siang": "Nasi merah, ayam bakar, sayur brokoli",
+      "menu_malam": "Sup ikan, tempe kukus",
+      "cemilan": "Apel, kacang almond",
+      "created_at": "2025-06-12T09:00:00.000000",
+      "updated_at": "2025-06-12T09:00:00.000000"
+    }
 
-  "profile": {
+    ```
 
-    // ... (data profil lengkap yang sudah terupdate, sama seperti GET profile) ...
+-   **Response Error:**
 
-  }
+    -   `400 Bad Request`: Format tanggal tidak valid.
 
-}
+    -   `401 Unauthorized`: Token tidak valid.
 
-Response Error:
+    -   `403 Forbidden`: Pengguna bukan pasien.
 
-400 Bad Request: Data tidak valid (misal format tanggal salah).
+    -   `404 Not Found`: Tidak ada rencana pola makan untuk tanggal ini.
 
-401 Unauthorized: Token tidak valid.
+#### 2.1.5 Dapatkan Program Rehabilitasi Pasien (Tampilan Kalender)
 
-403 Forbidden: Pengguna bukan pasien.
+-   **Method:**  `GET`
 
-404 Not Found: Profil pasien tidak ditemukan.
+-   **URL:**  `/api/patient/calendar-programs`
 
-409 Conflict: Username, email, atau nomor telepon baru sudah digunakan.
+-   **Deskripsi:** Pasien mendapatkan daftar program rehabilitasi mereka untuk tampilan kalender, dengan filter berdasarkan rentang tanggal (opsional).
 
-500 Internal Server Error.
+-   **Headers:**
 
-2.1.3 Upload/Update Foto Profil Pasien
+    -   `Authorization: Bearer <TOKEN_PASIEN>`
 
-Method: POST atau PUT
+-   **Query Parameters (Opsional):**
 
-URL: /api/patient/profile/picture
+    -   `start_date` (string, `YYYY-MM-DD`): Tanggal mulai rentang.
 
-Deskripsi: Mengunggah atau memperbarui foto profil pasien.
+    -   `end_date` (string, `YYYY-MM-DD`): Tanggal akhir rentang.
 
-Headers:
+-   **Response Sukses (200 OK):**
 
-Authorization: Bearer <TOKEN_PASIEN>
+    ```
+    {
+      "programs": [
+        {
+          "id": 1,
+          "nama_program": "Rehabilitasi Lutut Minggu ke-2",
+          "tanggal_program": "2025-06-12",
+          "status": "belum_dimulai",
+          "catatan_terapis": "Fokus pada penguatan quadrisep.",
+          "terapis_nama": "Dr. Terapis Handal"
+        },
+        {
+          "id": 2,
+          "nama_program": "Terapi Bahu Bulan Pertama",
+          "tanggal_program": "2025-06-15",
+          "status": "berjalan",
+          "catatan_terapis": null,
+          "terapis_nama": "Dr. Terapis Handal"
+        }
+      ]
+    }
 
-Content-Type: multipart/form-data
+    ```
 
-Request Body: form-data
+-   **Response Error:**
 
-foto_profil (file, wajib): (file gambar .png, .jpg, dll.)
+    -   `400 Bad Request`: Format tanggal `start_date` atau `end_date` tidak valid.
 
-Response Sukses (200 OK):
+    -   `401 Unauthorized`: Token tidak valid.
 
-{
+    -   `403 Forbidden`: Pengguna bukan pasien.
 
-  "msg": "Foto profil berhasil diupdate",
+### 2.2 Program Rehabilitasi (`/api/program`)
 
-  "url_foto_profil": "https://<azure_storage_account>.blob.core.windows.net/<container>/profil/foto/uuid_namafile.jpg"
+*Endpoint* untuk pasien melihat programnya.
 
-}
+#### 2.2.1 Dapatkan Program Hari Ini/Aktif
 
-Response Error:
+-   **Method:**  `GET`
 
-400 Bad Request: File foto_profil tidak ditemukan atau format file salah.
+-   **URL:**  `/api/program/pasien/today`
 
-401 Unauthorized: Token tidak valid.
+-   **Deskripsi:** Pasien mendapatkan program aktif yang dijadwalkan untuk hari ini atau program aktif terdekat yang belum selesai.
 
-403 Forbidden: Pengguna bukan pasien.
+-   **Headers:**
 
-404 Not Found: Profil tidak ditemukan.
+    -   `Authorization: Bearer <TOKEN_PASIEN>`
 
-500 Internal Server Error.
+-   **Response Sukses (200 OK):**
 
-2.1.4 Dapatkan Rencana Pola Makan Pasien (Tanggal Spesifik)
+    ```
+    {
+      "id": 1,
+      "nama_program": "Rehabilitasi Lutut Minggu ke-2",
+      "tanggal_program": "2025-06-12",
+      "catatan_terapis": "Fokus pada penguatan quadrisep.",
+      "status": "belum_dimulai",
+      "terapis": { "id": 1, "username": "terapis_handal", "nama_lengkap": "Dr. Terapis Handal", "email": "terapis.handal@example.com", "role": "terapis" },
+      "pasien": { "id": 2, "username": "pasien_rajin", "nama_lengkap": "Budi Pasien Rajin", "email": "pasien.rajin@example.com", "role": "pasien" },
+      "list_gerakan_direncanakan": [
+        // ... (data gerakan lengkap) ...
+      ],
+      "total_planned_movements": 27,
+      "estimated_total_duration_minutes": 135,
+      "created_at": "2025-06-12T09:00:00.000000",
+      "updated_at": "2025-06-12T09:00:00.000000",
+      "laporan_terkait": null
+    }
 
-Method: GET
+    ```
 
-URL: /api/patient/diet-plan/<string:tanggal_str>
+-   **Response Error:**
 
-Deskripsi: Pasien mendapatkan rencana pola makan mereka untuk tanggal tertentu.
+    -   `401 Unauthorized`: Token tidak valid.
 
-URL Parameters:
+    -   `403 Forbidden`: Pengguna bukan pasien.
 
-tanggal_str (string, wajib): Tanggal dalam format YYYY-MM-DD.
+    -   `404 Not Found`: Jika tidak ada program aktif yang dijadwalkan.
 
-Headers:
+#### 2.2.2 Dapatkan Riwayat Program
 
-Authorization: Bearer <TOKEN_PASIEN>
+-   **Method:**  `GET`
 
-Response Sukses (200 OK):
+-   **URL:**  `/api/program/pasien/history`
 
-{
+-   **Deskripsi:** Pasien mendapatkan riwayat semua program yang pernah di-assign kepadanya (mendukung paginasi).
 
-  "id": 1,
+-   **Headers:**
 
-  "pasien_id": 2,
+    -   `Authorization: Bearer <TOKEN_PASIEN>`
 
-  "nama_pasien": "Budi Pasien Rajin",
+-   **Query Parameters (Opsional):**
 
-  "terapis_id": 1,
+    -   `page` (integer, default: 1)
 
-  "nama_terapis": "Dr. Terapis Handal",
+    -   `per_page` (integer, default: 10)
 
-  "tanggal_makan": "2025-06-12",
+-   **Response Sukses (200 OK):**
 
-  "menu_pagi": "Oatmeal dengan buah beri",
+    ```
+    {
+      "programs": [
+        {
+          "id": 1,
+          "nama_program": "Rehabilitasi Lutut Minggu ke-2",
+          "tanggal_program": "2025-06-12",
+          "catatan_terapis": "Fokus pada penguatan quadrisep.",
+          "status": "belum_dimulai",
+          "terapis": { /* ... */ },
+          "pasien": { /* ... */ },
+          "list_gerakan_direncanakan": [ /* ... */ ],
+          "total_planned_movements": 27,
+          "estimated_total_duration_minutes": 135,
+          "created_at": "2025-06-12T09:00:00.000000",
+          "updated_at": "2025-06-12T09:00:00.000000",
+          "laporan_terkait": null
+        }
+        // ... item lainnya ...
+      ],
+      "total_items": 5,
+      "total_pages": 1,
+      "current_page": 1
+    }
 
-  "menu_siang": "Nasi merah, ayam bakar, sayur brokoli",
+    ```
 
-  "menu_malam": "Sup ikan, tempe kukus",
+-   **Response Error:**
 
-  "cemilan": "Apel, kacang almond",
+    -   `401 Unauthorized`: Token tidak valid.
 
-  "created_at": "2025-06-12T09:00:00.000000",
+    -   `403 Forbidden`: Pengguna bukan pasien.
 
-  "updated_at": "2025-06-12T09:00:00.000000"
+### 2.3 Laporan Hasil Rehabilitasi (`/api/laporan`)
 
-}
+*Endpoint* untuk pasien mengirimkan hasil pelaksanaan program dan untuk melihat laporan.
 
-Response Error:
+#### 2.3.1 Submit Laporan Hasil Rehabilitasi
 
-400 Bad Request: Format tanggal tidak valid.
+-   **Method:**  `POST`
 
-401 Unauthorized: Token tidak valid.
+-   **URL:**  `/api/laporan/submit`
 
-403 Forbidden: Pengguna bukan pasien.
+-   **Deskripsi:** Pasien mengirimkan hasil dari program rehabilitasi yang telah dilakukan.
 
-404 Not Found: Tidak ada rencana pola makan untuk tanggal ini.
+-   **Headers:**
 
-2.1.5 Dapatkan Program Rehabilitasi Pasien (Tampilan Kalender)
+    -   `Authorization: Bearer <TOKEN_PASIEN>`
 
-Method: GET
+    -   `Content-Type: application/json`
 
-URL: /api/patient/calendar-programs
+-   **Request Body:**
 
-Deskripsi: Pasien mendapatkan daftar program rehabilitasi mereka untuk tampilan kalender, dengan filter berdasarkan rentang tanggal (opsional).
+    ```
+    {
+      "program_rehabilitasi_id": 1, // ID program yang dilaporkan
+      "tanggal_laporan": "2025-06-12", // Tanggal laporan disubmit/program dilakukan
+      "total_waktu_rehabilitasi_detik": 1800, // Total waktu dalam detik
+      "catatan_pasien_laporan": "Semua gerakan terasa baik, sedikit pegal.",
+      "detail_hasil_gerakan": [ // Array hasil per gerakan
+        {
+          "gerakan_id": 1, // ID gerakan dari library
+          "urutan_gerakan_dalam_program": 1, // Urutan gerakan ini saat dilakukan
+          "jumlah_sempurna": 10,
+          "jumlah_tidak_sempurna": 2,
+          "jumlah_tidak_terdeteksi": 0,
+          "waktu_aktual_per_gerakan_detik": 300 // Waktu untuk gerakan ini (detik)
+        },
+        {
+          "gerakan_id": 3,
+          "urutan_gerakan_dalam_program": 2,
+          "jumlah_sempurna": 15,
+          "jumlah_tidak_sempurna": 0,
+          "jumlah_tidak_terdeteksi": 0,
+          "waktu_aktual_per_gerakan_detik": 360
+        }
+      ]
+    }
 
-Headers:
+    ```
 
-Authorization: Bearer <TOKEN_PASIEN>
+-   **Response Sukses (201 Created):**
 
-Query Parameters (Opsional):
+    ```
+    {
+      "msg": "Laporan berhasil disubmit",
+      "data_laporan": {
+        "laporan_id": 1,
+        "pasien_info": { "id": 2, "username": "pasien_rajin", "nama_lengkap": "Budi Pasien Rajin", "email": "pasien.rajin@example.com", "role": "pasien" },
+        "program_info": { "id": 1, "nama_program": "Rehabilitasi Lutut Minggu ke-2", "nama_terapis_program": "Dr. Terapis Handal" },
+        "tanggal_program_direncanakan": "2025-06-12",
+        "tanggal_laporan_disubmit": "2025-06-12",
+        "total_waktu_rehabilitasi_string": "30:00",
+        "total_waktu_rehabilitasi_detik": 1800,
+        "catatan_pasien_laporan": "Semua gerakan terasa baik, sedikit pegal.",
+        "points_earned": 250,
+        "detail_hasil_gerakan": [
+          {
+            "laporan_gerakan_id": 1,
+            "nama_gerakan": "Angkat Kaki Lurus",
+            "jumlah_repetisi_direncanakan": 12,
+            "jumlah_sempurna": 10,
+            "jumlah_tidak_sempurna": 2,
+            "jumlah_tidak_terdeteksi": 0,
+            "waktu_aktual_per_gerakan_detik": 300
+          }
+          // ... detail gerakan lainnya ...
+        ],
+        "summary_total_hitungan": { "sempurna": 25, "tidak_sempurna": 2, "tidak_terdeteksi": 0 },
+        "created_at": "2025-06-12T10:00:00.000000"
+      }
+    }
 
-start_date (string, YYYY-MM-DD): Tanggal mulai rentang.
+    ```
 
-end_date (string, YYYY-MM-DD): Tanggal akhir rentang.
+-   **Response Error:**
 
-Response Sukses (200 OK):
+    -   `400 Bad Request`: `program_rehabilitasi_id` atau `detail_hasil_gerakan` tidak ada/tidak valid.
 
-{
+    -   `401 Unauthorized`: Token tidak valid.
 
-  "programs": [
+    -   `403 Forbidden`: Pasien tidak berhak mengirim laporan untuk program ini.
 
-    {
+    -   `404 Not Found`: Program tidak ditemukan.
 
-      "id": 1,
+    -   `409 Conflict`: Laporan untuk program ini sudah pernah disubmit.
 
-      "nama_program": "Rehabilitasi Lutut Minggu ke-2",
+    -   `500 Internal Server Error`.
 
-      "tanggal_program": "2025-06-12",
+#### 2.3.2 Dapatkan Riwayat Laporan
 
-      "status": "belum_dimulai",
+-   **Method:**  `GET`
 
-      "catatan_terapis": "Fokus pada penguatan quadrisep.",
+-   **URL:**  `/api/laporan/pasien/history`
 
-      "terapis_nama": "Dr. Terapis Handal"
+-   **Deskripsi:** Pasien mendapatkan daftar semua laporannya (mendukung paginasi).
 
-    },
+-   **Headers:**
 
-    {
+    -   `Authorization: Bearer <TOKEN_PASIEN>`
 
-      "id": 2,
+-   **Query Parameters (Opsional):**
 
-      "nama_program": "Terapi Bahu Bulan Pertama",
+    -   `page` (integer, default: 1)
 
-      "tanggal_program": "2025-06-15",
+    -   `per_page` (integer, default: 10)
 
-      "status": "berjalan",
+-   **Response Sukses (200 OK):**
 
-      "catatan_terapis": null,
+    ```
+    {
+      "laporan": [
+        {
+          "laporan_id": 1,
+          "pasien_info": { /* ... */ },
+          "program_info": { /* ... */ },
+          "tanggal_program_direncanakan": "2025-06-12",
+          "tanggal_laporan_disubmit": "2025-06-12",
+          "total_waktu_rehabilitasi_string": "30:00",
+          "total_waktu_rehabilitasi_detik": 1800,
+          "catatan_pasien_laporan": "Semua gerakan terasa baik, sedikit pegal.",
+          "points_earned": 250,
+          "detail_hasil_gerakan": [ /* ... */ ],
+          "summary_total_hitungan": { /* ... */ },
+          "created_at": "2025-06-12T10:00:00.000000"
+        }
+        // ... daftar laporan ...
+      ],
+      "total_items": 3,
+      "total_pages": 1,
+      "current_page": 1
+    }
 
-      "terapis_nama": "Dr. Terapis Handal"
+    ```
 
-    }
+-   **Response Error:**
 
-  ]
+    -   `401 Unauthorized`: Token tidak valid.
 
-}
+    -   `403 Forbidden`: Pengguna bukan pasien.
 
-Response Error:
+### 2.4 Gamifikasi (`/api/gamification`)
 
-400 Bad Request: Format tanggal start_date atau end_date tidak valid.
+*Endpoint* untuk pasien melihat badge yang mereka dapatkan.
 
-401 Unauthorized: Token tidak valid.
+#### 2.4.1 Dapatkan Badge Saya
 
-403 Forbidden: Pengguna bukan pasien.
+-   **Method:**  `GET`
 
-2.2 Program Rehabilitasi (/api/program)
+-   **URL:**  `/api/gamification/my-badges`
 
-Endpoint untuk pasien melihat programnya.
+-   **Deskripsi:** Endpoint untuk pasien melihat daftar badge yang sudah mereka dapatkan.
 
-2.2.1 Dapatkan Program Hari Ini/Aktif
+-   **Headers:**
 
-Method: GET
+    -   `Authorization: Bearer <TOKEN_PASIEN>`
 
-URL: /api/program/pasien/today
+-   **Response Sukses (200 OK):**
 
-Deskripsi: Pasien mendapatkan program aktif yang dijadwalkan untuk hari ini atau program aktif terdekat yang belum selesai.
+    ```
+    {
+      "my_badges": [
+        {
+          "id": 1,
+          "user_id": 2,
+          "badge_info": {
+            "id": 1,
+            "name": "Bintang Perunggu",
+            "description": "Diberikan untuk mencapai 1000 poin.",
+            "point_threshold": 1000,
+            "image_url": "https://<azure_storage_account>.blob.core.windows.net/<container>/badges/bronze_star.png",
+            "created_at": "2025-01-01T00:00:00.000000",
+            "updated_at": "2025-01-01T00:00:00.000000"
+          },
+          "awarded_at": "2025-06-15T11:00:00.000000"
+        }
+      ]
+    }
 
-Headers:
+    ```
 
-Authorization: Bearer <TOKEN_PASIEN>
+-   **Response Error:**
 
-Response Sukses (200 OK):
+    -   `401 Unauthorized`: Token tidak valid.
 
-{
-
-  "id": 1,
-
-  "nama_program": "Rehabilitasi Lutut Minggu ke-2",
-
-  "tanggal_program": "2025-06-12",
-
-  "catatan_terapis": "Fokus pada penguatan quadrisep.",
-
-  "status": "belum_dimulai",
-
-  "terapis": { "id": 1, "username": "terapis_handal", "nama_lengkap": "Dr. Terapis Handal", "email": "terapis.handal@example.com", "role": "terapis" },
-
-  "pasien": { "id": 2, "username": "pasien_rajin", "nama_lengkap": "Budi Pasien Rajin", "email": "pasien.rajin@example.com", "role": "pasien" },
-
-  "list_gerakan_direncanakan": [
-
-    // ... (data gerakan lengkap) ...
-
-  ],
-
-  "total_planned_movements": 27,
-
-  "estimated_total_duration_minutes": 135,
-
-  "created_at": "2025-06-12T09:00:00.000000",
-
-  "updated_at": "2025-06-12T09:00:00.000000",
-
-  "laporan_terkait": null
-
-}
-
-Response Error:
-
-401 Unauthorized: Token tidak valid.
-
-403 Forbidden: Pengguna bukan pasien.
-
-404 Not Found: Jika tidak ada program aktif yang dijadwalkan.
-
-2.2.2 Dapatkan Riwayat Program
-
-Method: GET
-
-URL: /api/program/pasien/history
-
-Deskripsi: Pasien mendapatkan riwayat semua program yang pernah di-assign kepadanya (mendukung paginasi).
-
-Headers:
-
-Authorization: Bearer <TOKEN_PASIEN>
-
-Query Parameters (Opsional):
-
-page (integer, default: 1)
-
-per_page (integer, default: 10)
-
-Response Sukses (200 OK):
-
-{
-
-  "programs": [
-
-    {
-
-      "id": 1,
-
-      "nama_program": "Rehabilitasi Lutut Minggu ke-2",
-
-      "tanggal_program": "2025-06-12",
-
-      "catatan_terapis": "Fokus pada penguatan quadrisep.",
-
-      "status": "belum_dimulai",
-
-      "terapis": { /* ... */ },
-
-      "pasien": { /* ... */ },
-
-      "list_gerakan_direncanakan": [ /* ... */ ],
-
-      "total_planned_movements": 27,
-
-      "estimated_total_duration_minutes": 135,
-
-      "created_at": "2025-06-12T09:00:00.000000",
-
-      "updated_at": "2025-06-12T09:00:00.000000",
-
-      "laporan_terkait": null
-
-    }
-
-    // ... item lainnya ...
-
-  ],
-
-  "total_items": 5,
-
-  "total_pages": 1,
-
-  "current_page": 1
-
-}
-
-Response Error:
-
-401 Unauthorized: Token tidak valid.
-
-403 Forbidden: Pengguna bukan pasien.
-
-2.3 Laporan Hasil Rehabilitasi (/api/laporan)
-
-Endpoint untuk pasien mengirimkan hasil pelaksanaan program dan untuk melihat laporan.
-
-2.3.1 Submit Laporan Hasil Rehabilitasi
-
-Method: POST
-
-URL: /api/laporan/submit
-
-Deskripsi: Pasien mengirimkan hasil dari program rehabilitasi yang telah dilakukan.
-
-Headers:
-
-Authorization: Bearer <TOKEN_PASIEN>
-
-Content-Type: application/json
-
-Request Body:
-
-{
-
-  "program_rehabilitasi_id": 1, // ID program yang dilaporkan
-
-  "tanggal_laporan": "2025-06-12", // Tanggal laporan disubmit/program dilakukan
-
-  "total_waktu_rehabilitasi_detik": 1800, // Total waktu dalam detik
-
-  "catatan_pasien_laporan": "Semua gerakan terasa baik, sedikit pegal.",
-
-  "detail_hasil_gerakan": [ // Array hasil per gerakan
-
-    {
-
-      "gerakan_id": 1, // ID gerakan dari library
-
-      "urutan_gerakan_dalam_program": 1, // Urutan gerakan ini saat dilakukan
-
-      "jumlah_sempurna": 10,
-
-      "jumlah_tidak_sempurna": 2,
-
-      "jumlah_tidak_terdeteksi": 0,
-
-      "waktu_aktual_per_gerakan_detik": 300 // Waktu untuk gerakan ini (detik)
-
-    },
-
-    {
-
-      "gerakan_id": 3,
-
-      "urutan_gerakan_dalam_program": 2,
-
-      "jumlah_sempurna": 15,
-
-      "jumlah_tidak_sempurna": 0,
-
-      "jumlah_tidak_terdeteksi": 0,
-
-      "waktu_aktual_per_gerakan_detik": 360
-
-    }
-
-  ]
-
-}
-
-Response Sukses (201 Created):
-
-{
-
-  "msg": "Laporan berhasil disubmit",
-
-  "data_laporan": {
-
-    "laporan_id": 1,
-
-    "pasien_info": { "id": 2, "username": "pasien_rajin", "nama_lengkap": "Budi Pasien Rajin", "email": "pasien.rajin@example.com", "role": "pasien" },
-
-    "program_info": { "id": 1, "nama_program": "Rehabilitasi Lutut Minggu ke-2", "nama_terapis_program": "Dr. Terapis Handal" },
-
-    "tanggal_program_direncanakan": "2025-06-12",
-
-    "tanggal_laporan_disubmit": "2025-06-12",
-
-    "total_waktu_rehabilitasi_string": "30:00",
-
-    "total_waktu_rehabilitasi_detik": 1800,
-
-    "catatan_pasien_laporan": "Semua gerakan terasa baik, sedikit pegal.",
-
-    "points_earned": 250,
-
-    "detail_hasil_gerakan": [
-
-      {
-
-        "laporan_gerakan_id": 1,
-
-        "nama_gerakan": "Angkat Kaki Lurus",
-
-        "jumlah_repetisi_direncanakan": 12,
-
-        "jumlah_sempurna": 10,
-
-        "jumlah_tidak_sempurna": 2,
-
-        "jumlah_tidak_terdeteksi": 0,
-
-        "waktu_aktual_per_gerakan_detik": 300
-
-      }
-
-      // ... detail gerakan lainnya ...
-
-    ],
-
-    "summary_total_hitungan": { "sempurna": 25, "tidak_sempurna": 2, "tidak_terdeteksi": 0 },
-
-    "created_at": "2025-06-12T10:00:00.000000"
-
-  }
-
-}
-
-Response Error:
-
-400 Bad Request: program_rehabilitasi_id atau detail_hasil_gerakan tidak ada/tidak valid.
-
-401 Unauthorized: Token tidak valid.
-
-403 Forbidden: Pasien tidak berhak mengirim laporan untuk program ini.
-
-404 Not Found: Program tidak ditemukan.
-
-409 Conflict: Laporan untuk program ini sudah pernah disubmit.
-
-500 Internal Server Error.
-
-2.3.2 Dapatkan Riwayat Laporan
-
-Method: GET
-
-URL: /api/laporan/pasien/history
-
-Deskripsi: Pasien mendapatkan daftar semua laporannya (mendukung paginasi).
-
-Headers:
-
-Authorization: Bearer <TOKEN_PASIEN>
-
-Query Parameters (Opsional):
-
-page (integer, default: 1)
-
-per_page (integer, default: 10)
-
-Response Sukses (200 OK):
-
-{
-
-  "laporan": [
-
-    {
-
-      "laporan_id": 1,
-
-      "pasien_info": { /* ... */ },
-
-      "program_info": { /* ... */ },
-
-      "tanggal_program_direncanakan": "2025-06-12",
-
-      "tanggal_laporan_disubmit": "2025-06-12",
-
-      "total_waktu_rehabilitasi_string": "30:00",
-
-      "total_waktu_rehabilitasi_detik": 1800,
-
-      "catatan_pasien_laporan": "Semua gerakan terasa baik, sedikit pegal.",
-
-      "points_earned": 250,
-
-      "detail_hasil_gerakan": [ /* ... */ ],
-
-      "summary_total_hitungan": { /* ... */ },
-
-      "created_at": "2025-06-12T10:00:00.000000"
-
-    }
-
-    // ... daftar laporan ...
-
-  ],
-
-  "total_items": 3,
-
-  "total_pages": 1,
-
-  "current_page": 1
-
-}
-
-Response Error:
-
-401 Unauthorized: Token tidak valid.
-
-403 Forbidden: Pengguna bukan pasien.
-
-2.4 Gamifikasi (/api/gamification)
-
-Endpoint untuk pasien melihat badge yang mereka dapatkan.
-
-2.4.1 Dapatkan Badge Saya
-
-Method: GET
-
-URL: /api/gamification/my-badges
-
-Deskripsi: Endpoint untuk pasien melihat daftar badge yang sudah mereka dapatkan.
-
-Headers:
-
-Authorization: Bearer <TOKEN_PASIEN>
-
-Response Sukses (200 OK):
-
-{
-
-  "my_badges": [
-
-    {
-
-      "id": 1,
-
-      "user_id": 2,
-
-      "badge_info": {
-
-        "id": 1,
-
-        "name": "Bintang Perunggu",
-
-        "description": "Diberikan untuk mencapai 1000 poin.",
-
-        "point_threshold": 1000,
-
-        "image_url": "https://<azure_storage_account>.blob.core.windows.net/<container>/badges/bronze_star.png",
-
-        "created_at": "2025-01-01T00:00:00.000000",
-
-        "updated_at": "2025-01-01T00:00:00.000000"
-
-      },
-
-      "awarded_at": "2025-06-15T11:00:00.000000"
-
-    }
-
-  ]
-
-}
-
-Response Error:
-
-401 Unauthorized: Token tidak valid.
-
-403 Forbidden: Pengguna bukan pasien.
+    -   `403 Forbidden`: Pengguna bukan pasien.
 
 3\. API Khusus Terapis
+----------------------
 
-Bagian ini berisi endpoint yang khusus ditujukan untuk pengguna dengan peran Terapis.
+Bagian ini berisi *endpoint* yang khusus ditujukan untuk pengguna dengan peran Terapis.
 
-3.1 Manajemen Gerakan (/api/gerakan)
+### 3.1 Manajemen Gerakan (`/api/gerakan`)
 
-Endpoint untuk terapis mengelola perpustakaan gerakan rehabilitasi.
+*Endpoint* untuk terapis mengelola perpustakaan gerakan rehabilitasi.
 
-3.1.1 Buat Gerakan Baru
+#### 3.1.1 Buat Gerakan Baru
 
-Method: POST
+-   **Method:**  `POST`
 
-URL: /api/gerakan/
+-   **URL:**  `/api/gerakan/`
 
-Deskripsi: Terapis menambahkan gerakan baru ke perpustakaan.
+-   **Deskripsi:** Terapis menambahkan gerakan baru ke perpustakaan.
 
-Headers:
+-   **Headers:**
 
-Authorization: Bearer <TOKEN_TERAPIS>
+    -   `Authorization: Bearer <TOKEN_TERAPIS>`
 
-Content-Type: multipart/form-data (akan otomatis jika mengirim file)
+    -   `Content-Type: multipart/form-data` (akan otomatis jika mengirim file)
 
-Request Body: form-data
+-   **Request Body:**  `form-data`
 
-nama_gerakan (teks, wajib): "Angkat Kaki Lurus"
+    -   `nama_gerakan` (teks, wajib): "Angkat Kaki Lurus"
 
-deskripsi (teks, opsional): "Berbaring, angkat satu kaki lurus ke atas."
+    -   `deskripsi` (teks, opsional): "Berbaring, angkat satu kaki lurus ke atas."
 
-foto (file, opsional): (file gambar .png, .jpg, dll.)
+    -   `foto` (file, opsional): (file gambar `.png`, `.jpg`, dll.)
 
-video (file, opsional): (file video .mp4, .mov, dll.)
+    -   `video` (file, opsional): (file video `.mp4`, `.mov`, dll.)
 
-model_tflite (file, opsional): (file .tflite)
+    -   `model_tflite` (file, opsional): (file `.tflite`)
 
-Response Sukses (201 Created):
+-   **Response Sukses (201 Created):**
 
-{
+    ```
+    {
+      "msg": "Gerakan berhasil dibuat",
+      "gerakan": {
+        "id": 1,
+        "nama_gerakan": "Angkat Kaki Lurus",
+        "deskripsi": "Berbaring, angkat satu kaki lurus ke atas.",
+        "url_foto": "https://<azure_storage_account>.blob.core.windows.net/<container>/gerakan/foto/uuid_namafile.jpg",
+        "url_video": "https://<azure_storage_account>.blob.core.windows.net/<container>/gerakan/video/uuid_namafile.mp4",
+        "url_model_tflite": "https://storage.googleapis.com/<gcs_bucket_name>/trained_tflite_models/model_uuid_namafile.tflite",
+        "created_by_terapis": { "id": 1, "username": "terapis_handal", "nama_lengkap": "Dr. Terapis Handal", "email": "terapis.handal@example.com", "role": "terapis" },
+        "created_at": "2025-06-05T11:00:00.000000",
+        "updated_at": "2025-06-05T11:00:00.000000"
+      }
+    }
 
-  "msg": "Gerakan berhasil dibuat",
+    ```
 
-  "gerakan": {
+-   **Response Error:**
 
-    "id": 1,
+    -   `400 Bad Request`: Data *form* tidak lengkap, format file salah, atau *error upload*.
 
-    "nama_gerakan": "Angkat Kaki Lurus",
+    -   `401 Unauthorized`: Token tidak valid.
 
-    "deskripsi": "Berbaring, angkat satu kaki lurus ke atas.",
+    -   `403 Forbidden`: Pengguna bukan terapis.
 
-    "url_foto": "https://<azure_storage_account>.blob.core.windows.net/<container>/gerakan/foto/uuid_namafile.jpg",
+    -   `500 Internal Server Error`.
 
-    "url_video": "https://<azure_storage_account>.blob.core.windows.net/<container>/gerakan/video/uuid_namafile.mp4",
+#### 3.1.2 Update Gerakan
 
-    "url_model_tflite": "https://storage.googleapis.com/<gcs_bucket_name>/trained_tflite_models/model_uuid_namafile.tflite",
+-   **Method:**  `PUT`
 
-    "created_by_terapis": { "id": 1, "username": "terapis_handal", "nama_lengkap": "Dr. Terapis Handal", "email": "terapis.handal@example.com", "role": "terapis" },
+-   **URL:**  `/api/gerakan/<int:gerakan_id>`
 
-    "created_at": "2025-06-05T11:00:00.000000",
+-   **Deskripsi:** Terapis memperbarui detail gerakan.
 
-    "updated_at": "2025-06-05T11:00:00.000000"
+-   **URL Parameters:**
 
-  }
+    -   `gerakan_id` (integer, wajib): ID unik gerakan.
 
-}
+-   **Headers:**
 
-Response Error:
+    -   `Authorization: Bearer <TOKEN_TERAPIS>`
 
-400 Bad Request: Data form tidak lengkap, format file salah, atau error upload.
+    -   `Content-Type: multipart/form-data`
 
-401 Unauthorized: Token tidak valid.
+-   **Request Body:**  `form-data` (kirim *field* yang ingin diubah, termasuk file jika ingin mengganti)
 
-403 Forbidden: Pengguna bukan terapis.
+    -   `nama_gerakan` (teks, opsional)
 
-500 Internal Server Error.
+    -   `deskripsi` (teks, opsional)
 
-3.1.2 Update Gerakan
+    -   `foto` (file, opsional)
 
-Method: PUT
+    -   `video` (file, opsional)
 
-URL: /api/gerakan/<int:gerakan_id>
+    -   `model_tflite` (file, opsional)
 
-Deskripsi: Terapis memperbarui detail gerakan.
+-   **Response Sukses (200 OK):**
 
-URL Parameters:
+    ```
+    {
+      "msg": "Gerakan berhasil diupdate",
+      "gerakan": {
+        // ... (data gerakan lengkap yang sudah terupdate, sama seperti GET detail gerakan) ...
+      }
+    }
 
-gerakan_id (integer, wajib): ID unik gerakan.
+    ```
 
-Headers:
+-   **Response Error:**
 
-Authorization: Bearer <TOKEN_TERAPIS>
+    -   `400 Bad Request`: Data *form* tidak lengkap, format file salah, atau *error upload*.
 
-Content-Type: multipart/form-data
+    -   `401 Unauthorized`: Token tidak valid.
 
-Request Body: form-data (kirim field yang ingin diubah, termasuk file jika ingin mengganti)
+    -   `403 Forbidden`: Pengguna bukan terapis.
 
-nama_gerakan (teks, opsional)
+    -   `404 Not Found`: Gerakan tidak ditemukan.
 
-deskripsi (teks, opsional)
+    -   `500 Internal Server Error`.
 
-foto (file, opsional)
+#### 3.1.3 Hapus Gerakan
 
-video (file, opsional)
+-   **Method:**  `DELETE`
 
-model_tflite (file, opsional)
+-   **URL:**  `/api/gerakan/<int:gerakan_id>`
 
-Response Sukses (200 OK):
+-   **Deskripsi:** Terapis menghapus gerakan dari perpustakaan.
 
-{
+-   **URL Parameters:**
 
-  "msg": "Gerakan berhasil diupdate",
+    -   `gerakan_id` (integer, wajib): ID unik gerakan.
 
-  "gerakan": {
+-   **Headers:**
 
-    // ... (data gerakan lengkap yang sudah terupdate, sama seperti GET detail gerakan) ...
+    -   `Authorization: Bearer <TOKEN_TERAPIS>`
 
-  }
+-   **Response Sukses (200 OK):**
 
-}
+    ```
+    {
+      "msg": "Gerakan berhasil dihapus"
+    }
 
-Response Error:
+    ```
 
-400 Bad Request: Data form tidak lengkap, format file salah, atau error upload.
+-   **Response Error:**
 
-401 Unauthorized: Token tidak valid.
+    -   `401 Unauthorized`: Token tidak valid.
 
-403 Forbidden: Pengguna bukan terapis.
+    -   `403 Forbidden`: Pengguna bukan terapis.
 
-404 Not Found: Gerakan tidak ditemukan.
+    -   `404 Not Found`: Gerakan tidak ditemukan.
 
-500 Internal Server Error.
+    -   `500 Internal Server Error`.
 
-3.1.3 Hapus Gerakan
+### 3.2 Program Rehabilitasi (`/api/program`)
 
-Method: DELETE
+*Endpoint* untuk terapis membuat dan meng-assign program.
 
-URL: /api/gerakan/<int:gerakan_id>
+#### 3.2.1 Dapatkan Daftar Pasien
 
-Deskripsi: Terapis menghapus gerakan dari perpustakaan.
+-   **Method:**  `GET`
 
-URL Parameters:
+-   **URL:**  `/api/program/pasien-list`
 
-gerakan_id (integer, wajib): ID unik gerakan.
+-   **Deskripsi:** Terapis mendapatkan daftar semua pasien untuk dipilih saat membuat program, termasuk URL foto profil dan diagnosis pasien.
 
-Headers:
+-   **Headers:**
 
-Authorization: Bearer <TOKEN_TERAPIS>
+    -   `Authorization: Bearer <TOKEN_TERAPIS>`
 
-Response Sukses (200 OK):
+-   **Response Sukses (200 OK):**
 
-{
+    ```
+    [
+      {
+        "id": 2,
+        "username": "pasien_rajin",
+        "nama_lengkap": "Budi Pasien Rajin",
+        "email": "pasien.rajin@example.com",
+        "role": "pasien",
+        "total_points": 1500,
+        "foto_url": "https://<azure_storage_account>.blob.core.windows.net/<container>/profil/foto/uuid_namafile.jpg",
+        "diagnosis": "Post-stroke ringan"
+      },
+      {
+        "id": 3,
+        "username": "siti_pasien",
+        "nama_lengkap": "Siti Pasien",
+        "email": "siti.pasien@example.com",
+        "role": "pasien",
+        "total_points": 500,
+        "foto_url": null,
+        "diagnosis": "Belum ada diagnosis"
+      }
+    ]
 
-  "msg": "Gerakan berhasil dihapus"
+    ```
 
-}
+-   **Response Error:**
 
-Response Error:
+    -   `401 Unauthorized`: Token tidak valid.
 
-401 Unauthorized: Token tidak valid.
+    -   `403 Forbidden`: Pengguna bukan terapis.
 
-403 Forbidden: Pengguna bukan terapis.
+#### 3.2.2 Dapatkan Informasi Pasien untuk Konteks Program
 
-404 Not Found: Gerakan tidak ditemukan.
+-   **Method:**  `GET`
 
-500 Internal Server Error.
+-   **URL:**  `/api/program/patient-info/<int:pasien_id>`
 
-3.2 Program Rehabilitasi (/api/program)
+-   **Deskripsi:** Terapis mendapatkan informasi dasar pasien (termasuk foto, diagnosis, jenis kelamin, tanggal lahir, dan total poin) dalam konteks modul program.
 
-Endpoint untuk terapis membuat dan meng-assign program.
+-   **URL Parameters:**
 
-3.2.1 Dapatkan Daftar Pasien
+    -   `pasien_id` (integer, wajib): ID unik pasien.
 
-Method: GET
+-   **Headers:**
 
-URL: /api/program/pasien-list
+    -   `Authorization: Bearer <TOKEN_TERAPIS>`
 
-Deskripsi: Terapis mendapatkan daftar semua pasien untuk dipilih saat membuat program, termasuk URL foto profil dan diagnosis pasien.
+-   **Response Sukses (200 OK):**
 
-Headers:
+    ```
+    {
+      "id": 2,
+      "username": "pasien_rajin",
+      "nama_lengkap": "Budi Pasien Rajin",
+      "email": "pasien.rajin@example.com",
+      "role": "pasien",
+      "total_points": 1500,
+      "foto_url": "https://<azure_storage_account>.blob.core.windows.net/<container>/profil/foto/uuid_namafile.jpg",
+      "diagnosis": "Post-stroke ringan",
+      "jenis_kelamin": "Laki-laki",
+      "tanggal_lahir": "1990-05-15"
+    }
 
-Authorization: Bearer <TOKEN_TERAPIS>
+    ```
 
-Response Sukses (200 OK):
+-   **Response Error:**
 
-[
+    -   `401 Unauthorized`: Token tidak valid.
 
-  {
+    -   `403 Forbidden`: Pengguna bukan terapis.
 
-    "id": 2,
+    -   `404 Not Found`: Pasien tidak ditemukan.
 
-    "username": "pasien_rajin",
+#### 3.2.3 Buat & Assign Program Baru
 
-    "nama_lengkap": "Budi Pasien Rajin",
+-   **Method:**  `POST`
 
-    "email": "pasien.rajin@example.com",
+-   **URL:**  `/api/program/`
 
-    "role": "pasien",
+-   **Deskripsi:** Terapis membuat program baru dan meng-assign ke pasien.
 
-    "total_points": 1500,
+-   **Headers:**
 
-    "foto_url": "https://<azure_storage_account>.blob.core.windows.net/<container>/profil/foto/uuid_namafile.jpg",
+    -   `Authorization: Bearer <TOKEN_TERAPIS>`
 
-    "diagnosis": "Post-stroke ringan"
+    -   `Content-Type: application/json`
 
-  },
+-   **Request Body:**
 
-  {
+    ```
+    {
+      "nama_program": "Rehabilitasi Lutut Minggu ke-2",
+      "pasien_id": 2, // ID pasien yang dituju
+      "tanggal_program": "2025-06-12", // Tanggal program ini akan dilakukan pasien
+      "catatan_terapis": "Fokus pada penguatan quadrisep.",
+      "status": "belum_dimulai", // Opsional, default: belum_dimulai
+      "list_gerakan_direncanakan": [
+        { "gerakan_id": 1, "jumlah_repetisi_direncanakan": 12, "urutan_dalam_program": 1 },
+        { "gerakan_id": 3, "jumlah_repetisi_direncanakan": 15, "urutan_dalam_program": 2 }
+      ]
+    }
 
-    "id": 3,
+    ```
 
-    "username": "siti_pasien",
+-   **Response Sukses (201 Created):**
 
-    "nama_lengkap": "Siti Pasien",
+    ```
+    {
+      "msg": "Program rehabilitasi berhasil dibuat dan di-assign",
+      "program": {
+        "id": 1,
+        "nama_program": "Rehabilitasi Lutut Minggu ke-2",
+        "tanggal_program": "2025-06-12",
+        "catatan_terapis": "Fokus pada penguatan quadrisep.",
+        "status": "belum_dimulai",
+        "terapis": { "id": 1, "username": "terapis_handal", "nama_lengkap": "Dr. Terapis Handal", "email": "terapis.handal@example.com", "role": "terapis" },
+        "pasien": { "id": 2, "username": "pasien_rajin", "nama_lengkap": "Budi Pasien Rajin", "email": "pasien.rajin@example.com", "role": "pasien" },
+        "list_gerakan_direncanakan": [
+          {
+            "id": 1,
+            "nama_gerakan": "Angkat Kaki Lurus",
+            "deskripsi": "Berbaring, angkat satu kaki lurus ke atas.",
+            "url_foto": "...",
+            "url_video": "...",
+            "url_model_tflite": "...",
+            "created_by_terapis": { "id": 1, "username": "terapis_handal", "nama_lengkap": "Dr. Terapis Handal", "email": "terapis.handal@example.com", "role": "terapis" },
+            "created_at": "...",
+            "updated_at": "...",
+            "jumlah_repetisi_direncanakan": 12,
+            "urutan_dalam_program": 1,
+            "program_gerakan_detail_id": 1
+          }
+          // ... gerakan lainnya ...
+        ],
+        "total_planned_movements": 27,
+        "estimated_total_duration_minutes": 135,
+        "created_at": "2025-06-12T09:00:00.000000",
+        "updated_at": "2025-06-12T09:00:00.000000",
+        "laporan_terkait": null
+      }
+    }
 
-    "email": "siti.pasien@example.com",
+    ```
 
-    "role": "pasien",
+-   **Response Error:**
 
-    "total_points": 500,
+    -   `400 Bad Request`: Data tidak lengkap, format tanggal/status tidak valid, atau data gerakan tidak valid.
 
-    "foto_url": null,
+    -   `401 Unauthorized`: Token tidak valid.
 
-    "diagnosis": "Belum ada diagnosis"
+    -   `403 Forbidden`: Pengguna bukan terapis.
 
-  }
+    -   `404 Not Found`: Pasien atau gerakan tidak ditemukan.
 
-]
+    -   `500 Internal Server Error`.
 
-Response Error:
+#### 3.2.4 Dapatkan Program yang Di-assign ke Pasien Tertentu
 
-401 Unauthorized: Token tidak valid.
+-   **Method:**  `GET`
 
-403 Forbidden: Pengguna bukan terapis.
+-   **URL:**  `/api/program/terapis/assigned-to-patient/<int:pasien_id>`
 
-3.2.2 Dapatkan Informasi Pasien untuk Konteks Program
+-   **Deskripsi:** Terapis mendapatkan riwayat program yang telah ia assign ke pasien tertentu (mendukung paginasi).
 
-Method: GET
+-   **URL Parameters:**
 
-URL: /api/program/patient-info/<int:pasien_id>
+    -   `pasien_id` (integer, wajib): ID unik pasien.
 
-Deskripsi: Terapis mendapatkan informasi dasar pasien (termasuk foto, diagnosis, jenis kelamin, tanggal lahir, dan total poin) dalam konteks modul program.
+-   **Headers:**
 
-URL Parameters:
+    -   `Authorization: Bearer <TOKEN_TERAPIS>`
 
-pasien_id (integer, wajib): ID unik pasien.
+-   **Query Parameters (Opsional):**
 
-Headers:
+    -   `page` (integer, default: 1)
 
-Authorization: Bearer <TOKEN_TERAPIS>
+    -   `per_page` (integer, default: 100)
 
-Response Sukses (200 OK):
+-   **Response Sukses (200 OK):**
 
-{
+    ```
+    {
+      "msg": "Daftar program yang di-assign ke pasien NAMA_PASIEN berhasil diambil",
+      "programs": [
+        {
+          "id": 1,
+          "nama_program": "Rehabilitasi Lutut Minggu ke-2",
+          "tanggal_program": "2025-06-12",
+          "catatan_terapis": "Fokus pada penguatan quadrisep.",
+          "status": "belum_dimulai",
+          "terapis": { /* ... */ },
+          "pasien": { /* ... */ },
+          "list_gerakan_direncanakan": [ /* ... */ ],
+          "total_planned_movements": 27,
+          "estimated_total_duration_minutes": 135,
+          "created_at": "2025-06-12T09:00:00.000000",
+          "updated_at": "2025-06-12T09:00:00.000000",
+          "laporan_terkait": null
+        }
+        // ... daftar program ...
+      ],
+      "total_items": 5,
+      "total_pages": 1,
+      "current_page": 1
+    }
 
-  "id": 2,
+    ```
 
-  "username": "pasien_rajin",
+-   **Response Error:**
 
-  "nama_lengkap": "Budi Pasien Rajin",
+    -   `401 Unauthorized`: Token tidak valid.
 
-  "email": "pasien.rajin@example.com",
+    -   `403 Forbidden`: Pengguna bukan terapis.
 
-  "role": "pasien",
+    -   `404 Not Found`: Pasien tidak ditemukan.
 
-  "total_points": 1500,
+### 3.3 Laporan Hasil Rehabilitasi (`/api/laporan`)
 
-  "foto_url": "https://<azure_storage_account>.blob.core.windows.net/<container>/profil/foto/uuid_namafile.jpg",
+*Endpoint* untuk terapis melihat laporan.
 
-  "diagnosis": "Post-stroke ringan",
+#### 3.3.1 Dapatkan Riwayat Laporan Pasien Tertentu
 
-  "jenis_kelamin": "Laki-laki",
+-   **Method:**  `GET`
 
-  "tanggal_lahir": "1990-05-15"
+-   **URL:**  `/api/laporan/terapis/by-pasien/<int:target_pasien_id>`
 
-}
+-   **Deskripsi:** Terapis mendapatkan daftar laporan dari pasien tertentu yang pernah di-assign program olehnya (mendukung paginasi).
 
-Response Error:
+-   **URL Parameters:**
 
-401 Unauthorized: Token tidak valid.
+    -   `target_pasien_id` (integer, wajib): ID unik pasien target.
 
-403 Forbidden: Pengguna bukan terapis.
+-   **Headers:**
 
-404 Not Found: Pasien tidak ditemukan.
+    -   `Authorization: Bearer <TOKEN_TERAPIS>`
 
-3.2.3 Buat & Assign Program Baru
+-   **Query Parameters (Opsional):**
 
-Method: POST
+    -   `page` (integer, default: 1)
 
-URL: /api/program/
+    -   `per_page` (integer, default: 10)
 
-Deskripsi: Terapis membuat program baru dan meng-assign ke pasien.
+-   **Response Sukses (200 OK):**
 
-Headers:
+    ```
+    {
+      "msg": "Riwayat laporan untuk pasien NAMA_PASIEN berhasil diambil",
+      "laporan": [
+        {
+          "laporan_id": 1,
+          "pasien_info": { /* ... */ },
+          "program_info": { /* ... */ },
+          "tanggal_program_direncanakan": "2025-06-12",
+          "tanggal_laporan_disubmit": "2025-06-12",
+          "total_waktu_rehabilitasi_string": "30:00",
+          "total_waktu_rehabilitasi_detik": 1800,
+          "catatan_pasien_laporan": "Semua gerakan terasa baik, sedikit pegal.",
+          "points_earned": 250,
+          "detail_hasil_gerakan": [ /* ... */ ],
+          "summary_total_hitungan": { /* ... */ },
+          "created_at": "2025-06-12T10:00:00.000000"
+        }
+        // ... daftar laporan ...
+      ],
+      "total_items": 3,
+      "total_pages": 1,
+      "current_page": 1
+    }
 
-Authorization: Bearer <TOKEN_TERAPIS>
+    ```
 
-Content-Type: application/json
+-   **Response Error:**
 
-Request Body:
+    -   `401 Unauthorized`: Token tidak valid.
 
-{
+    -   `403 Forbidden`: Pengguna tidak berhak melihat laporan pasien ini.
 
-  "nama_program": "Rehabilitasi Lutut Minggu ke-2",
+    -   `404 Not Found`: Pasien tidak ditemukan.
 
-  "pasien_id": 2, // ID pasien yang dituju
+### 3.4 Manajemen Pola Makan oleh Terapis (`/api/terapis`)
 
-  "tanggal_program": "2025-06-12", // Tanggal program ini akan dilakukan pasien
+*Endpoint* khusus untuk terapis mengelola pola makan pasien.
 
-  "catatan_terapis": "Fokus pada penguatan quadrisep.",
+#### 3.4.1 Dapatkan Detail Pasien Saya
 
-  "status": "belum_dimulai", // Opsional, default: belum_dimulai
+-   **Method:**  `GET`
 
-  "list_gerakan_direncanakan": [
+-   **URL:**  `/api/terapis/my-patients-details`
 
-    { "gerakan_id": 1, "jumlah_repetisi_direncanakan": 12, "urutan_dalam_program": 1 },
+-   **Deskripsi:** Terapis mendapatkan daftar detail pasien yang pernah mereka tangani, termasuk URL foto profil dan diagnosis pasien.
 
-    { "gerakan_id": 3, "jumlah_repetisi_direncanakan": 15, "urutan_dalam_program": 2 }
+-   **Headers:**
 
-  ]
+    -   `Authorization: Bearer <TOKEN_TERAPIS>`
 
-}
+-   **Response Sukses (200 OK):**
 
-Response Sukses (201 Created):
+    ```
+    {
+      "patients": [
+        {
+          "id": 2,
+          "nama": "Budi Pasien Rajin",
+          "email": "pasien.rajin@example.com",
+          "foto_url": "https://<azure_storage_account>.blob.core.windows.net/<container>/profil/foto/uuid_namafile.jpg",
+          "diagnosis": "Post-stroke ringan"
+        },
+        {
+          "id": 3,
+          "nama": "Siti Pasien",
+          "email": "siti.pasien@example.com",
+          "foto_url": null,
+          "diagnosis": "Belum ada diagnosis"
+        }
+      ]
+    }
 
-{
+    ```
 
-  "msg": "Program rehabilitasi berhasil dibuat dan di-assign",
+-   **Response Error:**
 
-  "program": {
+    -   `401 Unauthorized`: Token tidak valid.
 
-    "id": 1,
+    -   `403 Forbidden`: Pengguna bukan terapis.
 
-    "nama_program": "Rehabilitasi Lutut Minggu ke-2",
+#### 3.4.2 Dapatkan Ringkasan Dashboard
 
-    "tanggal_program": "2025-06-12",
+-   **Method:**  `GET`
 
-    "catatan_terapis": "Fokus pada penguatan quadrisep.",
+-   **URL:**  `/api/terapis/dashboard-summary`
 
-    "status": "belum_dimulai",
+-   **Deskripsi:** Mendapatkan data ringkasan KPI dan data grafik untuk *dashboard* terapis.
 
-    "terapis": { "id": 1, "username": "terapis_handal", "nama_lengkap": "Dr. Terapis Handal", "email": "terapis.handal@example.com", "role": "terapis" },
+-   **Headers:**
 
-    "pasien": { "id": 2, "username": "pasien_rajin", "nama_lengkap": "Budi Pasien Rajin", "email": "pasien.rajin@example.com", "role": "pasien" },
+    -   `Authorization: Bearer <TOKEN_TERAPIS>`
 
-    "list_gerakan_direncanakan": [
+-   **Response Sukses (200 OK):**
 
-      {
+    ```
+    {
+      "kpi": {
+        "total_pasien_ditangani": 10,
+        "pasien_rehabilitasi_hari_ini": 3,
+        "pasien_selesai_rehabilitasi_hari_ini": 1
+      },
+      "program_terbaru_terapis": [
+        {
+          "id": 5,
+          "program_name": "Rehabilitasi Kaki Kiri Lanjutan",
+          "patient_id": 2,
+          "patient_name": "Budi Pasien Rajin",
+          "execution_date": "2025-06-12",
+          "status": "berjalan",
+          "catatan_terapis": "Fokus pada kekuatan sendi.",
+          "movements_details": [
+            {
+              "id": 1,
+              "nama_gerakan": "Angkat Kaki Lurus",
+              "deskripsi": "Berbaring, angkat satu kaki lurus ke atas.",
+              "url_foto": "...",
+              "url_video": "...",
+              "url_model_tflite": "...",
+              "created_by_terapis": { "id": 1, "username": "terapis_handal", "nama_lengkap": "Dr. Terapis Handal", "email": "terapis.handal@example.com", "role": "terapis" },
+              "created_at": "...",
+              "updated_at": "...",
+              "jumlah_repetisi_direncanakan": 12,
+              "urutan_dalam_program": 1,
+              "program_gerakan_detail_id": 1
+            }
+          ]
+        },
+        {
+          "id": 4,
+          "program_name": "Terapi Pergelangan Tangan",
+          "patient_id": 3,
+          "patient_name": "Siti Pasien",
+          "execution_date": "2025-06-10",
+          "status": "selesai",
+          "catatan_terapis": null,
+          "movements_details": [ /* ... */ ]
+        }
+      ],
+      "chart_data_patients_per_day": {
+        "labels": ["13 Mei", "14 Mei", "15 Mei", "...", "12 Jun"],
+        "data": [0, 1, 0, /* ... */, 1] // Jumlah pasien baru yang di-assign setiap hari
+      }
+    }
 
-        "id": 1,
+    ```
 
-        "nama_gerakan": "Angkat Kaki Lurus",
+-   **Response Error:**
 
-        "deskripsi": "Berbaring, angkat satu kaki lurus ke atas.",
+    -   `401 Unauthorized`: Token tidak valid.
 
-        "url_foto": "...",
+    -   `403 Forbidden`: Pengguna bukan terapis.
 
-        "url_video": "...",
+#### 3.4.3 Buat Rencana Pola Makan
 
-        "url_model_tflite": "...",
+-   **Method:**  `POST`
 
-        "created_by_terapis": { "id": 1, "username": "terapis_handal", "nama_lengkap": "Dr. Terapis Handal", "email": "terapis.handal@example.com", "role": "terapis" },
+-   **URL:**  `/api/terapis/diet-plan`
 
-        "created_at": "...",
+-   **Deskripsi:** Terapis membuat rencana pola makan baru untuk pasien.
 
-        "updated_at": "...",
+-   **Headers:**
 
-        "jumlah_repetisi_direncanakan": 12,
+    -   `Authorization: Bearer <TOKEN_TERAPIS>`
 
-        "urutan_dalam_program": 1,
+    -   `Content-Type: application/json`
 
-        "program_gerakan_detail_id": 1
+-   **Request Body:**
 
-      }
+    ```
+    {
+      "pasien_id": 2,
+      "tanggal_makan": "2025-06-12",
+      "menu_pagi": "Roti gandum, telur rebus",
+      "menu_siang": "Salad sayuran, dada ayam panggang",
+      "menu_malam": "Ikan kukus, sup brokoli",
+      "cemilan": "Buah pir, yoghurt"
+    }
 
-      // ... gerakan lainnya ...
+    ```
 
-    ],
+-   **Response Sukses (201 Created):**
 
-    "total_planned_movements": 27,
+    ```
+    {
+      "msg": "Pola makan berhasil dibuat",
+      "pola_makan": {
+        "id": 1,
+        "pasien_id": 2,
+        "nama_pasien": "Budi Pasien Rajin",
+        "terapis_id": 1,
+        "nama_terapis": "Dr. Terapis Handal",
+        "tanggal_makan": "2025-06-12",
+        "menu_pagi": "Roti gandum, telur rebus",
+        "menu_siang": "Salad sayuran, dada ayam panggang",
+        "menu_malam": "Ikan kukus, sup brokoli",
+        "cemilan": "Buah pir, yoghurt",
+        "created_at": "2025-06-12T14:00:00.000000",
+        "updated_at": "2025-06-12T14:00:00.000000"
+      }
+    }
 
-    "estimated_total_duration_minutes": 135,
+    ```
 
-    "created_at": "2025-06-12T09:00:00.000000",
+-   **Response Error:**
 
-    "updated_at": "2025-06-12T09:00:00.000000",
+    -   `400 Bad Request`: ID Pasien atau Tanggal Makan tidak diisi, atau format tanggal tidak valid.
 
-    "laporan_terkait": null
+    -   `401 Unauthorized`: Token tidak valid.
 
-  }
+    -   `403 Forbidden`: Pengguna bukan terapis.
 
-}
+    -   `404 Not Found`: Pasien tidak ditemukan.
 
-Response Error:
+    -   `409 Conflict`: Pola makan untuk pasien dan tanggal ini sudah ada.
 
-400 Bad Request: Data tidak lengkap, format tanggal/status tidak valid, atau data gerakan tidak valid.
+    -   `500 Internal Server Error`.
 
-401 Unauthorized: Token tidak valid.
+#### 3.4.4 Perbarui Rencana Pola Makan
 
-403 Forbidden: Pengguna bukan terapis.
+-   **Method:**  `PUT`
 
-404 Not Found: Pasien atau gerakan tidak ditemukan.
+-   **URL:**  `/api/terapis/diet-plan/<int:plan_id>`
 
-500 Internal Server Error.
+-   **Deskripsi:** Terapis memperbarui rencana pola makan pasien.
 
-3.2.4 Dapatkan Program yang Di-assign ke Pasien Tertentu
+-   **URL Parameters:**
 
-Method: GET
+    -   `plan_id` (integer, wajib): ID unik rencana pola makan.
 
-URL: /api/program/terapis/assigned-to-patient/<int:pasien_id>
+-   **Headers:**
 
-Deskripsi: Terapis mendapatkan riwayat program yang telah ia assign ke pasien tertentu (mendukung paginasi).
+    -   `Authorization: Bearer <TOKEN_TERAPIS>`
 
-URL Parameters:
+    -   `Content-Type: application/json`
 
-pasien_id (integer, wajib): ID unik pasien.
+-   **Request Body:**
 
-Headers:
+    ```
+    {
+      "menu_pagi": "Roti gandum, telur dadar",
+      "cemilan": "Buah pisang"
+    }
 
-Authorization: Bearer <TOKEN_TERAPIS>
+    ```
 
-Query Parameters (Opsional):
+-   **Response Sukses (200 OK):**
 
-page (integer, default: 1)
+    ```
+    {
+      "msg": "Pola makan berhasil diperbarui",
+      "pola_makan": {
+        "id": 1,
+        "pasien_id": 2,
+        "nama_pasien": "Budi Pasien Rajin",
+        "terapis_id": 1,
+        "nama_terapis": "Dr. Terapis Handal",
+        "tanggal_makan": "2025-06-12",
+        "menu_pagi": "Roti gandum, telur dadar",
+        "menu_siang": "Salad sayuran, dada ayam panggang",
+        "menu_malam": "Ikan kukus, sup brokoli",
+        "cemilan": "Buah pisang",
+        "created_at": "2025-06-12T14:00:00.000000",
+        "updated_at": "2025-06-12T14:30:00.000000"
+      }
+    }
 
-per_page (integer, default: 100)
+    ```
 
-Response Sukses (200 OK):
+-   **Response Error:**
 
-{
+    -   `401 Unauthorized`: Token tidak valid.
 
-  "msg": "Daftar program yang di-assign ke pasien NAMA_PASIEN berhasil diambil",
+    -   `403 Forbidden`: Pengguna bukan terapis.
 
-  "programs": [
+    -   `404 Not Found`: Pola makan tidak ditemukan atau terapis tidak berhak mengeditnya.
 
-    {
+    -   `500 Internal Server Error`.
 
-      "id": 1,
+#### 3.4.5 Hapus Rencana Pola Makan
 
-      "nama_program": "Rehabilitasi Lutut Minggu ke-2",
+-   **Method:**  `DELETE`
 
-      "tanggal_program": "2025-06-12",
+-   **URL:**  `/api/terapis/diet-plan/<int:plan_id>`
 
-      "catatan_terapis": "Fokus pada penguatan quadrisep.",
+-   **Deskripsi:** Terapis menghapus rencana pola makan pasien.
 
-      "status": "belum_dimulai",
+-   **URL Parameters:**
 
-      "terapis": { /* ... */ },
+    -   `plan_id` (integer, wajib): ID unik rencana pola makan.
 
-      "pasien": { /* ... */ },
+-   **Headers:**
 
-      "list_gerakan_direncanakan": [ /* ... */ ],
+    -   `Authorization: Bearer <TOKEN_TERAPIS>`
 
-      "total_planned_movements": 27,
+-   **Response Sukses (200 OK):**
 
-      "estimated_total_duration_minutes": 135,
+    ```
+    {
+      "msg": "Pola makan berhasil dihapus"
+    }
 
-      "created_at": "2025-06-12T09:00:00.000000",
+    ```
 
-      "updated_at": "2025-06-12T09:00:00.000000",
+-   **Response Error:**
 
-      "laporan_terkait": null
+    -   `401 Unauthorized`: Token tidak valid.
 
-    }
+    -   `403 Forbidden`: Pengguna bukan terapis.
 
-    // ... daftar program ...
+    -   `404 Not Found`: Pola makan tidak ditemukan atau terapis tidak berhak menghapusnya.
 
-  ],
+    -   `500 Internal Server Error`.
 
-  "total_items": 5,
+#### 3.4.6 Dapatkan Pola Makan Pasien pada Tanggal Tertentu
 
-  "total_pages": 1,
+-   **Method:**  `GET`
 
-  "current_page": 1
+-   **URL:**  `/api/terapis/diet-plan/patient/<int:pasien_id>/<string:tanggal_str>`
 
-}
+-   **Deskripsi:** Terapis mendapatkan pola makan spesifik untuk pasien dan tanggal tertentu.
 
-Response Error:
+-   **URL Parameters:**
 
-401 Unauthorized: Token tidak valid.
+    -   `pasien_id` (integer, wajib): ID unik pasien.
 
-403 Forbidden: Pengguna bukan terapis.
+    -   `tanggal_str` (string, wajib): Tanggal dalam format `YYYY-MM-DD`.
 
-404 Not Found: Pasien tidak ditemukan.
+-   **Headers:**
 
-3.3 Laporan Hasil Rehabilitasi (/api/laporan)
+    -   `Authorization: Bearer <TOKEN_TERAPIS>`
 
-Endpoint untuk terapis melihat laporan.
+-   **Response Sukses (200 OK):**
 
-3.3.1 Dapatkan Riwayat Laporan Pasien Tertentu
+    ```
+    {
+      "id": 1,
+      "pasien_id": 2,
+      "nama_pasien": "Budi Pasien Rajin",
+      "terapis_id": 1,
+      "nama_terapis": "Dr. Terapis Handal",
+      "tanggal_makan": "2025-06-12",
+      "menu_pagi": "Roti gandum, telur dadar",
+      "menu_siang": "Salad sayuran, dada ayam panggang",
+      "menu_malam": "Ikan kukus, sup brokoli",
+      "cemilan": "Buah pisang",
+      "created_at": "2025-06-12T14:00:00.000000",
+      "updated_at": "2025-06-12T14:30:00.000000"
+    }
 
-Method: GET
+    ```
 
-URL: /api/laporan/terapis/by-pasien/<int:target_pasien_id>
+-   **Response Error:**
 
-Deskripsi: Terapis mendapatkan daftar laporan dari pasien tertentu yang pernah di-assign program olehnya (mendukung paginasi).
+    -   `400 Bad Request`: Format tanggal tidak valid.
 
-URL Parameters:
+    -   `401 Unauthorized`: Token tidak valid.
 
-target_pasien_id (integer, wajib): ID unik pasien target.
+    -   `403 Forbidden`: Pengguna bukan terapis.
 
-Headers:
+    -   `404 Not Found`: Pola makan tidak ditemukan untuk pasien dan tanggal tersebut.
 
-Authorization: Bearer <TOKEN_TERAPIS>
+#### 3.4.7 Dapatkan Semua Pola Makan untuk Pasien Tertentu
 
-Query Parameters (Opsional):
+-   **Method:**  `GET`
 
-page (integer, default: 1)
+-   **URL:**  `/api/terapis/diet-plan/patient/<int:pasien_id>/all`
 
-per_page (integer, default: 10)
+-   **Deskripsi:** Terapis mendapatkan daftar semua rencana pola makan untuk pasien tertentu.
 
-Response Sukses (200 OK):
+-   **URL Parameters:**
 
-{
+    -   `pasien_id` (integer, wajib): ID unik pasien.
 
-  "msg": "Riwayat laporan untuk pasien NAMA_PASIEN berhasil diambil",
+-   **Headers:**
 
-  "laporan": [
+    -   `Authorization: Bearer <TOKEN_TERAPIS>`
 
-    {
+-   **Response Sukses (200 OK):**
 
-      "laporan_id": 1,
+    ```
+    {
+      "pola_makan": [
+        {
+          "id": 1,
+          "pasien_id": 2,
+          "nama_pasien": "Budi Pasien Rajin",
+          "terapis_id": 1,
+          "nama_terapis": "Dr. Terapis Handal",
+          "tanggal_makan": "2025-06-12",
+          "menu_pagi": "Roti gandum, telur dadar",
+          "menu_siang": "Salad sayuran, dada ayam panggang",
+          "menu_malam": "Ikan kukus, sup brokoli",
+          "cemilan": "Buah pisang",
+          "created_at": "2025-06-12T14:00:00.000000",
+          "updated_at": "2025-06-12T14:30:00.000000"
+        },
+        {
+          "id": 2,
+          "pasien_id": 2,
+          "nama_pasien": "Budi Pasien Rajin",
+          "terapis_id": 1,
+          "nama_terapis": "Dr. Terapis Handal",
+          "tanggal_makan": "2025-06-11",
+          "menu_pagi": "Nasi goreng",
+          "menu_siang": "Mie ayam",
+          "menu_malam": "Sate ayam",
+          "cemilan": "Keripik"
+        }
+      ]
+    }
 
-      "pasien_info": { /* ... */ },
+    ```
 
-      "program_info": { /* ... */ },
+-   **Response Error:**
 
-      "tanggal_program_direncanakan": "2025-06-12",
+    -   `401 Unauthorized`: Token tidak valid.
 
-      "tanggal_laporan_disubmit": "2025-06-12",
+    -   `403 Forbidden`: Pengguna bukan terapis.
 
-      "total_waktu_rehabilitasi_string": "30:00",
+### 3.5 Gamifikasi (`/api/gamification`)
 
-      "total_waktu_rehabilitasi_detik": 1800,
+*Endpoint* untuk terapis mengelola badge.
 
-      "catatan_pasien_laporan": "Semua gerakan terasa baik, sedikit pegal.",
+#### 3.5.1 Buat Badge Baru
 
-      "points_earned": 250,
+-   **Method:**  `POST`
 
-      "detail_hasil_gerakan": [ /* ... */ ],
+-   **URL:**  `/api/gamification/badges`
 
-      "summary_total_hitungan": { /* ... */ },
+-   **Deskripsi:** Endpoint untuk terapis membuat badge baru. Membutuhkan nama, deskripsi, ambang batas poin, dan file gambar.
 
-      "created_at": "2025-06-12T10:00:00.000000"
+-   **Headers:**
 
-    }
+    -   `Authorization: Bearer <TOKEN_TERAPIS>`
 
-    // ... daftar laporan ...
+    -   `Content-Type: multipart/form-data`
 
-  ],
+-   **Request Body:**  `form-data`
 
-  "total_items": 3,
+    -   `name` (teks, wajib): "Bintang Perunggu"
 
-  "total_pages": 1,
+    -   `description` (teks, opsional): "Diberikan untuk mencapai 1000 poin."
 
-  "current_page": 1
+    -   `point_threshold` (integer, wajib): 1000
 
-}
+    -   `image` (file, wajib): (file gambar `.png`, `.jpg`, dll.)
 
-Response Error:
+-   **Response Sukses (201 Created):**
 
-401 Unauthorized: Token tidak valid.
+    ```
+    {
+      "msg": "Badge berhasil dibuat",
+      "badge": {
+        "id": 1,
+        "name": "Bintang Perunggu",
+        "description": "Diberikan untuk mencapai 1000 poin.",
+        "point_threshold": 1000,
+        "image_url": "https://<azure_storage_account>.blob.core.windows.net/<container>/badges/bronze_star.png",
+        "created_at": "2025-01-01T00:00:00.000000",
+        "updated_at": "2025-01-01T00:00:00.000000"
+      }
+    }
 
-403 Forbidden: Pengguna tidak berhak melihat laporan pasien ini.
+    ```
 
-404 Not Found: Pasien tidak ditemukan.
+-   **Response Error:**
 
-3.4 Manajemen Pola Makan oleh Terapis (/api/terapis)
+    -   `400 Bad Request`: Data tidak lengkap, format ambang batas poin salah, atau file gambar tidak ditemukan.
 
-Endpoint khusus untuk terapis mengelola pola makan pasien.
+    -   `401 Unauthorized`: Token tidak valid.
 
-3.4.1 Dapatkan Detail Pasien Saya
+    -   `403 Forbidden`: Pengguna bukan terapis.
 
-Method: GET
+    -   `409 Conflict`: Nama badge atau ambang batas poin sudah ada.
 
-URL: /api/terapis/my-patients-details
+    -   `500 Internal Server Error`.
 
-Deskripsi: Terapis mendapatkan daftar detail pasien yang pernah mereka tangani, termasuk URL foto profil dan diagnosis pasien.
+#### 3.5.2 Perbarui Badge
 
-Headers:
+-   **Method:**  `PUT`
 
-Authorization: Bearer <TOKEN_TERAPIS>
+-   **URL:**  `/api/gamification/badges/<int:badge_id>`
 
-Response Sukses (200 OK):
+-   **Deskripsi:** Endpoint untuk terapis memperbarui detail badge yang sudah ada. Memungkinkan perubahan nama, deskripsi, ambang batas poin, dan gambar.
 
-{
+-   **URL Parameters:**
 
-  "patients": [
+    -   `badge_id` (integer, wajib): ID unik badge.
 
-    {
+-   **Headers:**
 
-      "id": 2,
+    -   `Authorization: Bearer <TOKEN_TERAPIS>`
 
-      "nama": "Budi Pasien Rajin",
+    -   `Content-Type: multipart/form-data`
 
-      "email": "pasien.rajin@example.com",
+-   **Request Body:**  `form-data` (kirim *field* yang ingin diubah, termasuk file jika ingin mengganti)
 
-      "foto_url": "https://<azure_storage_account>.blob.core.windows.net/<container>/profil/foto/uuid_namafile.jpg",
+    -   `name` (teks, opsional)
 
-      "diagnosis": "Post-stroke ringan"
+    -   `description` (teks, opsional)
 
-    },
+    -   `point_threshold` (integer, opsional)
 
-    {
+    -   `image` (file, opsional)
 
-      "id": 3,
+-   **Response Sukses (200 OK):**
 
-      "nama": "Siti Pasien",
+    ```
+    {
+      "msg": "Badge berhasil diperbarui",
+      "badge": {
+        "id": 1,
+        "name": "Bintang Perunggu",
+        "description": "Diberikan untuk mencapai 1000 poin (Diperbarui).",
+        "point_threshold": 1000,
+        "image_url": "https://<azure_storage_account>.blob.core.windows.net/<container>/badges/bronze_star_updated.png",
+        "created_at": "2025-01-01T00:00:00.000000",
+        "updated_at": "2025-06-15T10:00:00.000000"
+      }
+    }
 
-      "email": "siti.pasien@example.com",
+    ```
 
-      "foto_url": null,
+-   **Response Error:**
 
-      "diagnosis": "Belum ada diagnosis"
+    -   `400 Bad Request`: Format ambang batas poin salah.
 
-    }
+    -   `401 Unauthorized`: Token tidak valid.
 
-  ]
+    -   `403 Forbidden`: Pengguna bukan terapis.
 
-}
+    -   `404 Not Found`: Badge tidak ditemukan.
 
-Response Error:
+    -   `409 Conflict`: Nama badge atau ambang batas poin sudah ada (jika diubah).
 
-401 Unauthorized: Token tidak valid.
+    -   `500 Internal Server Error`.
 
-403 Forbidden: Pengguna bukan terapis.
+#### 3.5.3 Hapus Badge
 
-3.4.2 Dapatkan Ringkasan Dashboard
+-   **Method:**  `DELETE`
 
-Method: GET
+-   **URL:**  `/api/gamification/badges/<int:badge_id>`
 
-URL: /api/terapis/dashboard-summary
+-   **Deskripsi:** Endpoint untuk terapis menghapus badge.
 
-Deskripsi: Mendapatkan data ringkasan KPI dan data grafik untuk dashboard terapis.
+-   **URL Parameters:**
 
-Headers:
+    -   `badge_id` (integer, wajib): ID unik badge.
 
-Authorization: Bearer <TOKEN_TERAPIS>
+-   **Headers:**
 
-Response Sukses (200 OK):
+    -   `Authorization: Bearer <TOKEN_TERAPIS>`
 
-{
+-   **Response Sukses (200 OK):**
 
-  "kpi": {
+    ```
+    {
+      "msg": "Badge berhasil dihapus"
+    }
 
-    "total_pasien_ditangani": 10,
+    ```
 
-    "pasien_rehabilitasi_hari_ini": 3,
+-   **Response Error:**
 
-    "pasien_selesai_rehabilitasi_hari_ini": 1
+    -   `401 Unauthorized`: Token tidak valid.
 
-  },
+    -   `403 Forbidden`: Pengguna bukan terapis.
 
-  "program_terbaru_terapis": [
+    -   `404 Not Found`: Badge tidak ditemukan.
 
-    {
-
-      "id": 5,
-
-      "program_name": "Rehabilitasi Kaki Kiri Lanjutan",
-
-      "patient_id": 2,
-
-      "patient_name": "Budi Pasien Rajin",
-
-      "execution_date": "2025-06-12",
-
-      "status": "berjalan",
-
-      "catatan_terapis": "Fokus pada kekuatan sendi.",
-
-      "movements_details": [
-
-        {
-
-          "id": 1,
-
-          "nama_gerakan": "Angkat Kaki Lurus",
-
-          "deskripsi": "Berbaring, angkat satu kaki lurus ke atas.",
-
-          "url_foto": "...",
-
-          "url_video": "...",
-
-          "url_model_tflite": "...",
-
-          "created_by_terapis": { "id": 1, "username": "terapis_handal", "nama_lengkap": "Dr. Terapis Handal", "email": "terapis.handal@example.com", "role": "terapis" },
-
-          "created_at": "...",
-
-          "updated_at": "...",
-
-          "jumlah_repetisi_direncanakan": 12,
-
-          "urutan_dalam_program": 1,
-
-          "program_gerakan_detail_id": 1
-
-        }
-
-      ]
-
-    },
-
-    {
-
-      "id": 4,
-
-      "program_name": "Terapi Pergelangan Tangan",
-
-      "patient_id": 3,
-
-      "patient_name": "Siti Pasien",
-
-      "execution_date": "2025-06-10",
-
-      "status": "selesai",
-
-      "catatan_terapis": null,
-
-      "movements_details": [ /* ... */ ]
-
-    }
-
-  ],
-
-  "chart_data_patients_per_day": {
-
-    "labels": ["13 Mei", "14 Mei", "15 Mei", "...", "12 Jun"],
-
-    "data": [0, 1, 0, /* ... */, 1] // Jumlah pasien baru yang di-assign setiap hari
-
-  }
-
-}
-
-Response Error:
-
-401 Unauthorized: Token tidak valid.
-
-403 Forbidden: Pengguna bukan terapis.
-
-3.4.3 Buat Rencana Pola Makan
-
-Method: POST
-
-URL: /api/terapis/diet-plan
-
-Deskripsi: Terapis membuat rencana pola makan baru untuk pasien.
-
-Headers:
-
-Authorization: Bearer <TOKEN_TERAPIS>
-
-Content-Type: application/json
-
-Request Body:
-
-{
-
-  "pasien_id": 2,
-
-  "tanggal_makan": "2025-06-12",
-
-  "menu_pagi": "Roti gandum, telur rebus",
-
-  "menu_siang": "Salad sayuran, dada ayam panggang",
-
-  "menu_malam": "Ikan kukus, sup brokoli",
-
-  "cemilan": "Buah pir, yoghurt"
-
-}
-
-Response Sukses (201 Created):
-
-{
-
-  "msg": "Pola makan berhasil dibuat",
-
-  "pola_makan": {
-
-    "id": 1,
-
-    "pasien_id": 2,
-
-    "nama_pasien": "Budi Pasien Rajin",
-
-    "terapis_id": 1,
-
-    "nama_terapis": "Dr. Terapis Handal",
-
-    "tanggal_makan": "2025-06-12",
-
-    "menu_pagi": "Roti gandum, telur rebus",
-
-    "menu_siang": "Salad sayuran, dada ayam panggang",
-
-    "menu_malam": "Ikan kukus, sup brokoli",
-
-    "cemilan": "Buah pir, yoghurt",
-
-    "created_at": "2025-06-12T14:00:00.000000",
-
-    "updated_at": "2025-06-12T14:00:00.000000"
-
-  }
-
-}
-
-Response Error:
-
-400 Bad Request: ID Pasien atau Tanggal Makan tidak diisi, atau format tanggal tidak valid.
-
-401 Unauthorized: Token tidak valid.
-
-403 Forbidden: Pengguna bukan terapis.
-
-404 Not Found: Pasien tidak ditemukan.
-
-409 Conflict: Pola makan untuk pasien dan tanggal ini sudah ada.
-
-500 Internal Server Error.
-
-3.4.4 Perbarui Rencana Pola Makan
-
-Method: PUT
-
-URL: /api/terapis/diet-plan/<int:plan_id>
-
-Deskripsi: Terapis memperbarui rencana pola makan pasien.
-
-URL Parameters:
-
-plan_id (integer, wajib): ID unik rencana pola makan.
-
-Headers:
-
-Authorization: Bearer <TOKEN_TERAPIS>
-
-Content-Type: application/json
-
-Request Body:
-
-{
-
-  "menu_pagi": "Roti gandum, telur dadar",
-
-  "cemilan": "Buah pisang"
-
-}
-
-Response Sukses (200 OK):
-
-{
-
-  "msg": "Pola makan berhasil diperbarui",
-
-  "pola_makan": {
-
-    "id": 1,
-
-    "pasien_id": 2,
-
-    "nama_pasien": "Budi Pasien Rajin",
-
-    "terapis_id": 1,
-
-    "nama_terapis": "Dr. Terapis Handal",
-
-    "tanggal_makan": "2025-06-12",
-
-    "menu_pagi": "Roti gandum, telur dadar",
-
-    "menu_siang": "Salad sayuran, dada ayam panggang",
-
-    "menu_malam": "Ikan kukus, sup brokoli",
-
-    "cemilan": "Buah pisang",
-
-    "created_at": "2025-06-12T14:00:00.000000",
-
-    "updated_at": "2025-06-12T14:30:00.000000"
-
-  }
-
-}
-
-Response Error:
-
-401 Unauthorized: Token tidak valid.
-
-403 Forbidden: Pengguna bukan terapis.
-
-404 Not Found: Pola makan tidak ditemukan atau terapis tidak berhak mengeditnya.
-
-500 Internal Server Error.
-
-3.4.5 Hapus Rencana Pola Makan
-
-Method: DELETE
-
-URL: /api/terapis/diet-plan/<int:plan_id>
-
-Deskripsi: Terapis menghapus rencana pola makan pasien.
-
-URL Parameters:
-
-plan_id (integer, wajib): ID unik rencana pola makan.
-
-Headers:
-
-Authorization: Bearer <TOKEN_TERAPIS>
-
-Response Sukses (200 OK):
-
-{
-
-  "msg": "Pola makan berhasil dihapus"
-
-}
-
-Response Error:
-
-401 Unauthorized: Token tidak valid.
-
-403 Forbidden: Pengguna bukan terapis.
-
-404 Not Found: Pola makan tidak ditemukan atau terapis tidak berhak menghapusnya.
-
-500 Internal Server Error.
-
-3.4.6 Dapatkan Pola Makan Pasien pada Tanggal Tertentu
-
-Method: GET
-
-URL: /api/terapis/diet-plan/patient/<int:pasien_id>/<string:tanggal_str>
-
-Deskripsi: Terapis mendapatkan pola makan spesifik untuk pasien dan tanggal tertentu.
-
-URL Parameters:
-
-pasien_id (integer, wajib): ID unik pasien.
-
-tanggal_str (string, wajib): Tanggal dalam format YYYY-MM-DD.
-
-Headers:
-
-Authorization: Bearer <TOKEN_TERAPIS>
-
-Response Sukses (200 OK):
-
-{
-
-  "id": 1,
-
-  "pasien_id": 2,
-
-  "nama_pasien": "Budi Pasien Rajin",
-
-  "terapis_id": 1,
-
-  "nama_terapis": "Dr. Terapis Handal",
-
-  "tanggal_makan": "2025-06-12",
-
-  "menu_pagi": "Roti gandum, telur dadar",
-
-  "menu_siang": "Salad sayuran, dada ayam panggang",
-
-  "menu_malam": "Ikan kukus, sup brokoli",
-
-  "cemilan": "Buah pisang",
-
-  "created_at": "2025-06-12T14:00:00.000000",
-
-  "updated_at": "2025-06-12T14:30:00.000000"
-
-}
-
-Response Error:
-
-400 Bad Request: Format tanggal tidak valid.
-
-401 Unauthorized: Token tidak valid.
-
-403 Forbidden: Pengguna bukan terapis.
-
-404 Not Found: Pola makan tidak ditemukan untuk pasien dan tanggal tersebut.
-
-3.4.7 Dapatkan Semua Pola Makan untuk Pasien Tertentu
-
-Method: GET
-
-URL: /api/terapis/diet-plan/patient/<int:pasien_id>/all
-
-Deskripsi: Terapis mendapatkan daftar semua rencana pola makan untuk pasien tertentu.
-
-URL Parameters:
-
-pasien_id (integer, wajib): ID unik pasien.
-
-Headers:
-
-Authorization: Bearer <TOKEN_TERAPIS>
-
-Response Sukses (200 OK):
-
-{
-
-  "pola_makan": [
-
-    {
-
-      "id": 1,
-
-      "pasien_id": 2,
-
-      "nama_pasien": "Budi Pasien Rajin",
-
-      "terapis_id": 1,
-
-      "nama_terapis": "Dr. Terapis Handal",
-
-      "tanggal_makan": "2025-06-12",
-
-      "menu_pagi": "Roti gandum, telur dadar",
-
-      "menu_siang": "Salad sayuran, dada ayam panggang",
-
-      "menu_malam": "Ikan kukus, sup brokoli",
-
-      "cemilan": "Buah pisang",
-
-      "created_at": "2025-06-12T14:00:00.000000",
-
-      "updated_at": "2025-06-12T14:30:00.000000"
-
-    },
-
-    {
-
-      "id": 2,
-
-      "pasien_id": 2,
-
-      "nama_pasien": "Budi Pasien Rajin",
-
-      "terapis_id": 1,
-
-      "nama_terapis": "Dr. Terapis Handal",
-
-      "tanggal_makan": "2025-06-11",
-
-      "menu_pagi": "Nasi goreng",
-
-      "menu_siang": "Mie ayam",
-
-      "menu_malam": "Sate ayam",
-
-      "cemilan": "Keripik"
-
-    }
-
-  ]
-
-}
-
-Response Error:
-
-401 Unauthorized: Token tidak valid.
-
-403 Forbidden: Pengguna bukan terapis.
-
-3.5 Gamifikasi (/api/gamification)
-
-Endpoint untuk terapis mengelola badge.
-
-3.5.1 Buat Badge Baru
-
-Method: POST
-
-URL: /api/gamification/badges
-
-Deskripsi: Endpoint untuk terapis membuat badge baru. Membutuhkan nama, deskripsi, ambang batas poin, dan file gambar.
-
-Headers:
-
-Authorization: Bearer <TOKEN_TERAPIS>
-
-Content-Type: multipart/form-data
-
-Request Body: form-data
-
-name (teks, wajib): "Bintang Perunggu"
-
-description (teks, opsional): "Diberikan untuk mencapai 1000 poin."
-
-point_threshold (integer, wajib): 1000
-
-image (file, wajib): (file gambar .png, .jpg, dll.)
-
-Response Sukses (201 Created):
-
-{
-
-  "msg": "Badge berhasil dibuat",
-
-  "badge": {
-
-    "id": 1,
-
-    "name": "Bintang Perunggu",
-
-    "description": "Diberikan untuk mencapai 1000 poin.",
-
-    "point_threshold": 1000,
-
-    "image_url": "https://<azure_storage_account>.blob.core.windows.net/<container>/badges/bronze_star.png",
-
-    "created_at": "2025-01-01T00:00:00.000000",
-
-    "updated_at": "2025-01-01T00:00:00.000000"
-
-  }
-
-}
-
-Response Error:
-
-400 Bad Request: Data tidak lengkap, format ambang batas poin salah, atau file gambar tidak ditemukan.
-
-401 Unauthorized: Token tidak valid.
-
-403 Forbidden: Pengguna bukan terapis.
-
-409 Conflict: Nama badge atau ambang batas poin sudah ada.
-
-500 Internal Server Error.
-
-3.5.2 Perbarui Badge
-
-Method: PUT
-
-URL: /api/gamification/badges/<int:badge_id>
-
-Deskripsi: Endpoint untuk terapis memperbarui detail badge yang sudah ada. Memungkinkan perubahan nama, deskripsi, ambang batas poin, dan gambar.
-
-URL Parameters:
-
-badge_id (integer, wajib): ID unik badge.
-
-Headers:
-
-Authorization: Bearer <TOKEN_TERAPIS>
-
-Content-Type: multipart/form-data
-
-Request Body: form-data (kirim field yang ingin diubah, termasuk file jika ingin mengganti)
-
-name (teks, opsional)
-
-description (teks, opsional)
-
-point_threshold (integer, opsional)
-
-image (file, opsional)
-
-Response Sukses (200 OK):
-
-{
-
-  "msg": "Badge berhasil diperbarui",
-
-  "badge": {
-
-    "id": 1,
-
-    "name": "Bintang Perunggu",
-
-    "description": "Diberikan untuk mencapai 1000 poin (Diperbarui).",
-
-    "point_threshold": 1000,
-
-    "image_url": "https://<azure_storage_account>.blob.core.windows.net/<container>/badges/bronze_star_updated.png",
-
-    "created_at": "2025-01-01T00:00:00.000000",
-
-    "updated_at": "2025-06-15T10:00:00.000000"
-
-  }
-
-}
-
-Response Error:
-
-400 Bad Request: Format ambang batas poin salah.
-
-401 Unauthorized: Token tidak valid.
-
-403 Forbidden: Pengguna bukan terapis.
-
-404 Not Found: Badge tidak ditemukan.
-
-409 Conflict: Nama badge atau ambang batas poin sudah ada (jika diubah).
-
-500 Internal Server Error.
-
-3.5.3 Hapus Badge
-
-Method: DELETE
-
-URL: /api/gamification/badges/<int:badge_id>
-
-Deskripsi: Endpoint untuk terapis menghapus badge.
-
-URL Parameters:
-
-badge_id (integer, wajib): ID unik badge.
-
-Headers:
-
-Authorization: Bearer <TOKEN_TERAPIS>
-
-Response Sukses (200 OK):
-
-{
-
-  "msg": "Badge berhasil dihapus"
-
-}
-
-Response Error:
-
-401 Unauthorized: Token tidak valid.
-
-403 Forbidden: Pengguna bukan terapis.
-
-404 Not Found: Badge tidak ditemukan.
-
-500 Internal Server Error.
+    -   `500 Internal Server Error`.
