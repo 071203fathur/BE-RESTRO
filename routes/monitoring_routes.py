@@ -1,11 +1,12 @@
 # routes/monitoring_routes.py
 # TERBARU: Mengubah KPI dashboard, data grafik harian, dan manajemen Pola Makan.
 # Memperbaiki relasi 'program_asli' menjadi 'program_rehab'.
+# PERUBAHAN: Menambahkan highest_badge_info ke pasien_info di endpoint summary monitoring.
 
 from flask import Blueprint, jsonify, current_app
-from models import db, AppUser, PatientProfile, LaporanRehabilitasi, LaporanGerakanHasil, ProgramRehabilitasi, ProgramStatus
+from models import db, AppUser, PatientProfile, LaporanRehabilitasi, LaporanGerakanHasil, ProgramRehabilitasi, ProgramStatus, Badge, UserBadge # Import Badge dan UserBadge
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from sqlalchemy import func, cast, Date as SQLDate
+from sqlalchemy import func, cast, Date as SQLDate, desc # Import desc
 from datetime import date, timedelta, datetime
 
 monitoring_bp = Blueprint('monitoring_bp', __name__)
@@ -26,7 +27,8 @@ def get_pasien_monitoring_summary(pasien_id):
     """
     Endpoint untuk mendapatkan ringkasan monitoring pasien.
     Mengembalikan KPI, data tren, distribusi hasil gerakan, catatan terbaru,
-    dan riwayat program selesai untuk pasien tertentu, termasuk URL foto profil pasien.
+    dan riwayat program selesai untuk pasien tertentu, termasuk URL foto profil pasien
+    dan informasi badge tertinggi.
     """
     current_user_identity = get_jwt_identity()
     user_role = current_user_identity.get('role')
@@ -132,6 +134,14 @@ def get_pasien_monitoring_summary(pasien_id):
     # --- 4. Info Profil Pasien ---
     # Informasi profil pasien sudah diambil di awal fungsi (pasien_user, pasien_profile)
     # dan akan diserialisasi di objek response_data.
+    
+    # Ambil badge tertinggi yang dimiliki user (mirip logika leaderboard)
+    highest_badge_entry = UserBadge.query.filter_by(user_id=pasien_user.id)\
+                                         .join(Badge)\
+                                         .order_by(desc(Badge.point_threshold))\
+                                         .first()
+    highest_badge_info = highest_badge_entry.badge.serialize() if highest_badge_entry and highest_badge_entry.badge else None
+
 
     # --- 5. Catatan Terbaru (contoh: 5 catatan terakhir dari program & laporan) ---
     # Menggabungkan catatan dari ProgramRehabilitasi dan LaporanRehabilitasi
@@ -186,7 +196,9 @@ def get_pasien_monitoring_summary(pasien_id):
             "tanggal_lahir": pasien_profile.tanggal_lahir.strftime('%d-%m-%Y') if pasien_profile and pasien_profile.tanggal_lahir else "N/A",
             "diagnosis": pasien_profile.diagnosis if pasien_profile else "N/A",
             "catatan_tambahan_pasien": pasien_profile.catatan_tambahan if pasien_profile else "N/A",
-            "url_foto_profil": pasien_profile.serialize_full().get('url_foto_profil') if pasien_profile else None # URL foto profil
+            "url_foto_profil": pasien_profile.serialize_full().get('url_foto_profil') if pasien_profile else None, # URL foto profil
+            "total_points": pasien_user.total_points, # total_points sudah ada dari AppUser
+            "highest_badge_info": highest_badge_info # Menambahkan informasi badge tertinggi
         },
         "summary_kpi": {
             "total_sesi_selesai": total_sesi_selesai,

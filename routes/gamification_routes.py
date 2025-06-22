@@ -1,5 +1,7 @@
 # BE-RESTRO/routes/gamification_routes.py
 # Modul baru untuk mengelola endpoint gamifikasi (leaderboard dan badge).
+# PERBAIKAN: Mengatasi AttributeError: 'InstrumentedList' object has no attribute 'join'
+# dengan melakukan query pada UserBadge.
 
 from flask import Blueprint, jsonify, request, current_app
 from models import db, AppUser, Badge, UserBadge
@@ -33,15 +35,20 @@ def get_leaderboard():
 
     results = []
     for user in paginated_leaderboard.items:
-        # Ambil badge tertinggi yang dimiliki user (opsional)
-        highest_badge = user.badges_earned.join(Badge).order_by(desc(Badge.point_threshold)).first()
+        # PERBAIKAN: Mengambil badge tertinggi yang dimiliki user.
+        # Kita perlu query dari UserBadge, join ke Badge, lalu filter berdasarkan user.id
+        highest_badge_entry = UserBadge.query.filter_by(user_id=user.id)\
+                                             .join(Badge)\
+                                             .order_by(desc(Badge.point_threshold))\
+                                             .first()
 
         results.append({
             "user_id": user.id,
             "username": user.username,
             "nama_lengkap": user.nama_lengkap,
             "total_points": user.total_points,
-            "highest_badge_info": highest_badge.badge.serialize() if highest_badge and highest_badge.badge else None,
+            # Pastikan highest_badge_entry dan highest_badge_entry.badge ada sebelum diserialisasi
+            "highest_badge_info": highest_badge_entry.badge.serialize() if highest_badge_entry and highest_badge_entry.badge else None,
         })
 
     return jsonify({
@@ -244,3 +251,4 @@ def get_my_badges():
         badges_list.append(ub.serialize())
 
     return jsonify({"my_badges": badges_list}), 200
+

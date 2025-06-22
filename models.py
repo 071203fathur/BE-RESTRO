@@ -1,6 +1,8 @@
 # models.py
 # TERBARU: Penambahan model PolaMakan dan penyesuaian relasi LaporanRehabilitasi.
 # PERUBAHAN BARU: Menambahkan model Badge, UserBadge, dan kolom poin untuk gamifikasi.
+# PERUBAHAN DASHBOARD PASIEN: Menambahkan estimasi total gerakan dan durasi ke serialisasi ProgramRehabilitasi.
+# PERUBAHAN PROFIL PASIEN: Menambahkan highest_badge_info ke serialisasi PatientProfile.
 
 from app import db, bcrypt
 from datetime import datetime, date
@@ -8,6 +10,7 @@ from sqlalchemy.orm import validates
 import enum
 from utils.azure_helpers import get_blob_url
 from utils.gcs_helpers import get_gcs_url
+from sqlalchemy import desc # Import desc untuk mengurutkan badge
 
 # Enum untuk Status Program
 class ProgramStatus(str, enum.Enum):
@@ -25,7 +28,7 @@ class AppUser(db.Model):
     email = db.Column(db.String(120), unique=True, nullable=False, index=True)
     password_hash = db.Column(db.String(128), nullable=False)
     role = db.Column(db.String(10), nullable=False, index=True)
-    total_points = db.Column(db.Integer, default=0, nullable=False) # <--- TAMBAH INI
+    total_points = db.Column(db.Integer, default=0, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     patient_profile = db.relationship('PatientProfile', back_populates='user', uselist=False, cascade="all, delete-orphan")
     # Relasi ke PolaMakan yang dibuat oleh terapis
@@ -46,7 +49,7 @@ class AppUser(db.Model):
             'nama_lengkap': self.nama_lengkap,
             'email': self.email,
             'role': self.role,
-            'total_points': self.total_points # <--- TAMBAH INI
+            'total_points': self.total_points
         }
 
 # Model PatientProfile
@@ -74,6 +77,14 @@ class PatientProfile(db.Model):
     def serialize_full(self):
         user_data = self.user.serialize_basic() if self.user else {}
         serialized_data = user_data.copy()
+
+        # Ambil badge tertinggi yang dimiliki user ini
+        highest_badge_entry = UserBadge.query.filter_by(user_id=self.user_id)\
+                                             .join(Badge)\
+                                             .order_by(desc(Badge.point_threshold))\
+                                             .first()
+        highest_badge_info = highest_badge_entry.badge.serialize() if highest_badge_entry and highest_badge_entry.badge else None
+
         serialized_data.update({
             'jenis_kelamin': self.jenis_kelamin,
             'tanggal_lahir': self.tanggal_lahir.isoformat() if self.tanggal_lahir else None,
@@ -89,7 +100,8 @@ class PatientProfile(db.Model):
             'riwayat_medis': self.riwayat_medis,
             'riwayat_alergi': self.riwayat_alergi,
             'url_foto_profil': get_blob_url(self.filename_foto_profil),
-            'updated_at': self.updated_at.isoformat() if self.updated_at else None
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+            'highest_badge_info': highest_badge_info # Menambahkan informasi badge tertinggi
         })
         return serialized_data
 
@@ -154,6 +166,11 @@ class ProgramRehabilitasi(db.Model):
 
     def serialize_full(self):
         list_gerakan_direncanakan_details = []
+        total_planned_movements = 0 # Tambahan untuk dashboard pasien
+        # Estimasi 5 detik per repetisi untuk total durasi
+        ESTIMATED_SECONDS_PER_REPETITION = 5 
+        estimated_total_duration_seconds = 0 # Tambahan untuk dashboard pasien
+
         for detail in self.detail_gerakan.order_by(ProgramGerakanDetail.urutan.asc(), ProgramGerakanDetail.id.asc()).all():
             gerakan_obj = Gerakan.query.get(detail.gerakan_id)
             if gerakan_obj:
@@ -162,6 +179,11 @@ class ProgramRehabilitasi(db.Model):
                 gerakan_data['urutan_dalam_program'] = detail.urutan
                 gerakan_data['program_gerakan_detail_id'] = detail.id
                 list_gerakan_direncanakan_details.append(gerakan_data)
+                
+                # Hitung total gerakan dan estimasi durasi
+                total_planned_movements += detail.jumlah_repetisi # Asumsi 1 gerakan = 1 repetisi
+                estimated_total_duration_seconds += detail.jumlah_repetisi * ESTIMATED_SECONDS_PER_REPETITION
+
 
         terapis_info = self.terapis.serialize_basic() if self.terapis else None
         pasien_info = self.pasien.serialize_basic() if self.pasien else None
@@ -198,6 +220,8 @@ class ProgramRehabilitasi(db.Model):
             "terapis": terapis_info,
             "pasien": pasien_info,
             "list_gerakan_direncanakan": list_gerakan_direncanakan_details,
+            "total_planned_movements": total_planned_movements, # Tambahan
+            "estimated_total_duration_minutes": round(estimated_total_duration_seconds / 60), # Tambahan, dalam menit
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
             "laporan_terkait": laporan_terkait_summary
@@ -223,7 +247,7 @@ class LaporanRehabilitasi(db.Model):
     tanggal_laporan = db.Column(db.Date, nullable=False, default=date.today)
     total_waktu_rehabilitasi_detik = db.Column(db.Integer, nullable=True)
     catatan_pasien_laporan = db.Column(db.Text, nullable=True)
-    points_earned = db.Column(db.Integer, default=0, nullable=False) # <--- TAMBAH INI
+    points_earned = db.Column(db.Integer, default=0, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     pasien = db.relationship('AppUser', foreign_keys=[pasien_id], backref='laporan_rehabilitasi_pasien')
     terapis_yang_assign = db.relationship('AppUser', foreign_keys=[terapis_id], backref='laporan_rehabilitasi_terapis')
@@ -259,7 +283,7 @@ class LaporanRehabilitasi(db.Model):
             "total_waktu_rehabilitasi_string": self.format_durasi(self.total_waktu_rehabilitasi_detik),
             "total_waktu_rehabilitasi_detik": self.total_waktu_rehabilitasi_detik,
             "catatan_pasien_laporan": self.catatan_pasien_laporan,
-            "points_earned": self.points_earned, # <--- TAMBAH INI
+            "points_earned": self.points_earned,
             "detail_hasil_gerakan": detail_gerakan_list,
             "summary_total_hitungan": {"sempurna": total_hitung_sempurna, "tidak_sempurna": total_hitung_tidak_sempurna, "tidak_terdeteksi": total_hitung_tidak_terdeteksi},
             "created_at": self.created_at.isoformat() if self.created_at else None
@@ -333,7 +357,7 @@ class Badge(db.Model):
     point_threshold = db.Column(db.Integer, nullable=False, unique=True) # Poin yang dibutuhkan untuk mendapatkan badge ini
     filename_image = db.Column(db.String(255), nullable=True) # Nama file gambar badge di Azure Blob Storage
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow) # <--- TAMBAH INI
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     def serialize(self):
         return {
@@ -342,8 +366,8 @@ class Badge(db.Model):
             "description": self.description,
             "point_threshold": self.point_threshold,
             "image_url": get_blob_url(self.filename_image), # Menggunakan helper Azure Anda
-            "created_at": self.created_at.isoformat() if self.created_at else None, # <--- TAMBAH INI
-            "updated_at": self.updated_at.isoformat() if self.updated_at else None # <--- TAMBAH INI
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None
         }
 
 # NEW MODEL: UserBadge
@@ -367,4 +391,3 @@ class UserBadge(db.Model):
             "badge_info": self.badge.serialize() if self.badge else None,
             "awarded_at": self.awarded_at.isoformat() if self.awarded_at else None
         }
-
