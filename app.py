@@ -1,14 +1,38 @@
-# app.py
+# BE-RESTRO/app.py
 # PERUBAHAN: Menambahkan impor model PolaMakan dan gcs_helpers (melalui rute gerakan)
 # PERUBAHAN BARU: Menambahkan impor mhodel Badge, UserBadge dan blueprint gamifikasi.
+# PERUBAHAN FIREBASE: Menambahkan inisialisasi Firebase Admin SDK dan konfigurasi client-side.
 
 import os
 from flask import Flask
 from dotenv import load_dotenv
+import json # Diperlukan untuk mengurai JSON kredensial Firebase
+
+# --- Import Firebase Admin SDK ---
+import firebase_admin
+from firebase_admin import credentials, auth
 
 from extensions import db, migrate, jwt, bcrypt, cors
 
 load_dotenv()
+
+# Global flag untuk melacak status inisialisasi Firebase Admin SDK
+firebase_admin_initialized = False
+
+# Konfigurasi Firebase Client-Side (Client-side Firebase SDK)
+# Ini adalah konfigurasi yang akan dikirim ke frontend.
+# Anda bisa menemukannya di Firebase Console -> Project settings -> General -> Your apps -> Firebase SDK snippet (Config)
+# Disarankan untuk mendapatkan nilai-nilai ini dari environment variables untuk keamanan
+FIREBASE_CLIENT_CONFIG = {
+    "apiKey": os.getenv("FIREBASE_API_KEY"),
+    "authDomain": os.getenv("FIREBASE_AUTH_DOMAIN"),
+    "projectId": os.getenv("FIREBASE_PROJECT_ID"),
+    "storageBucket": os.getenv("FIREBASE_STORAGE_BUCKET"),
+    "messagingSenderId": os.getenv("FIREBASE_MESSAGING_SENDER_ID"),
+    "appId": os.getenv("FIREBASE_APP_ID"),
+    "measurementId": os.getenv("FIREBASE_MEASUREMENT_ID")
+}
+
 
 def create_app(test_config=None):
     app = Flask(__name__)
@@ -34,10 +58,38 @@ def create_app(test_config=None):
     cors.init_app(app, resources={r"/*": {"origins": "*"}})
 
     with app.app_context():
+        # --- Konfigurasi Firebase Admin SDK di dalam app context ---
+        # Mengambil konten JSON kredensial langsung dari environment variable
+        FIREBASE_ADMIN_SDK_JSON_CONTENT = os.getenv('FIREBASE_ADMIN_SDK_JSON_CONTENT')
+
+        global firebase_admin_initialized # Akses variabel global
+
+        try:
+            if not firebase_admin._apps: # Pastikan hanya diinisialisasi sekali
+                if FIREBASE_ADMIN_SDK_JSON_CONTENT:
+                    cred_dict = json.loads(FIREBASE_ADMIN_SDK_JSON_CONTENT)
+                    cred = credentials.Certificate(cred_dict)
+                    firebase_admin.initialize_app(cred)
+                    print("Firebase Admin SDK initialized successfully from environment variable in BE-RESTRO.")
+                    firebase_admin_initialized = True
+                else:
+                    print("WARNING: FIREBASE_ADMIN_SDK_JSON_CONTENT environment variable not found. Firebase Admin SDK not initialized in BE-RESTRO.")
+            else:
+                print("Firebase Admin SDK already initialized in BE-RESTRO.")
+                firebase_admin_initialized = True
+        except json.JSONDecodeError as e:
+            print(f"CRITICAL ERROR in BE-RESTRO: Failed to parse Firebase credentials JSON: {e}")
+            firebase_admin_initialized = False
+        except Exception as e:
+            print(f"CRITICAL ERROR in BE-RESTRO: Error initializing Firebase Admin SDK: {e}")
+            firebase_admin_initialized = False
+        # --- Akhir Konfigurasi Firebase Admin SDK ---
+
+
         # Tambahkan PolaMakan, Badge, UserBadge ke daftar impor model
         from models import AppUser, PatientProfile, Gerakan, ProgramRehabilitasi, \
                            ProgramGerakanDetail, LaporanRehabilitasi, LaporanGerakanHasil, \
-                           PolaMakan, Badge, UserBadge # <--- TAMBAH Badge, UserBadge
+                           PolaMakan, Badge, UserBadge 
 
         from routes.auth_routes import auth_bp
         from routes.patient_routes import patient_bp
@@ -46,7 +98,7 @@ def create_app(test_config=None):
         from routes.laporan_routes import laporan_bp
         from routes.monitoring_routes import monitoring_bp
         from routes.terapis_routes import terapis_bp
-        from routes.gamification_routes import gamification_bp # <--- TAMBAH INI
+        from routes.gamification_routes import gamification_bp
 
         app.register_blueprint(auth_bp, url_prefix='/auth')
         app.register_blueprint(patient_bp, url_prefix='/api/patient')
@@ -55,7 +107,7 @@ def create_app(test_config=None):
         app.register_blueprint(laporan_bp, url_prefix='/api/laporan')
         app.register_blueprint(monitoring_bp, url_prefix='/api/monitoring')
         app.register_blueprint(terapis_bp, url_prefix='/api/terapis')
-        app.register_blueprint(gamification_bp, url_prefix='/api/gamification') # <--- TAMBAH INI
+        app.register_blueprint(gamification_bp, url_prefix='/api/gamification')
 
         @app.route('/')
         def hello():
