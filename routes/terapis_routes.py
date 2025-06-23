@@ -1,5 +1,5 @@
 # routes/terapis_routes.py
-# TERBARU: Mengubah KPI dashboard, data grafik harian, dan manajemen Pola Makan.
+# PERUBAHAN: Menambahkan endpoint baru untuk mendapatkan daftar terapis dengan ID (untuk fitur chat/kontak).
 
 from flask import Blueprint, jsonify, request
 from models import db, AppUser, PatientProfile, ProgramRehabilitasi, ProgramStatus, PolaMakan
@@ -288,3 +288,29 @@ def get_all_diet_plans_for_patient(pasien_id):
     plans = PolaMakan.query.filter_by(pasien_id=pasien_id).order_by(PolaMakan.tanggal_makan.desc()).all()
 
     return jsonify({"pola_makan": [p.serialize() for p in plans]}), 200
+
+@terapis_bp.route('/list-all-terapis', methods=['GET'])
+@jwt_required()
+def list_all_terapis():
+    """
+    Endpoint untuk mendapatkan daftar semua terapis dengan ID dan nama lengkap mereka.
+    Dapat diakses oleh pasien atau terapis. Berguna untuk memulai chat atau menampilkan daftar kontak.
+    """
+    current_user_identity = get_jwt_identity()
+    user_role = current_user_identity.get('role')
+
+    # Hanya izinkan pasien dan terapis untuk mengakses
+    if user_role not in ['pasien', 'terapis']:
+        return jsonify({"msg": "Akses ditolak: Hanya pasien dan terapis yang dapat mengakses daftar terapis."}), 403
+
+    terapis_list = AppUser.query.filter_by(role='terapis').all()
+
+    result = []
+    for terapis in terapis_list:
+        result.append({
+            "id": terapis.id,
+            "username": terapis.username,
+            "nama_lengkap": terapis.nama_lengkap,
+            "email": terapis.email
+        })
+    return jsonify({"terapis_list": result}), 200
