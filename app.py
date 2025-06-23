@@ -1,6 +1,6 @@
 # app.py
 # PERUBAHAN: Menambahkan impor model PolaMakan dan gcs_helpers (melalui rute gerakan)
-# PERUBAHAN BARU: Menambahkan impor model Badge, UserBadge dan blueprint gamifikasi.
+# PERUBAHAN BARU: Menambahkan impor mhodel Badge, UserBadge dan blueprint gamifikasi.
 
 import os
 from flask import Flask

@@ -3,7 +3,7 @@ Dokumentasi API Backend - BE-RESTRO (Aplikasi Kesehatan)
 
 Dokumen ini menjelaskan semua *endpoint* API yang tersedia untuk backend aplikasi kesehatan BE-RESTRO.
 
-**Base URL:**  `http://127.0.0.1:5001` (Port bisa berbeda tergantung konfigurasi Anda atau lingkungan *deployment*.)
+**Base URL:**  `https://be-restro-api-fnfpghddbka7d4aw.eastasia-01.azurewebsites.net`
 
 **Format Data Umum:**
 
@@ -17,12 +17,16 @@ Dokumen ini menjelaskan semua *endpoint* API yang tersedia untuk backend aplikas
 
 -   Kirim token JWT di *header*  `Authorization` dengan format `Bearer <TOKEN_ANDA>`.
 
-1\. Autentikasi (`/auth`)
--------------------------
+1\. API untuk Semua Pengguna (Terapis & Pasien)
+-----------------------------------------------
+
+Bagian ini berisi *endpoint* yang dapat diakses oleh pengguna dengan peran Terapis maupun Pasien, setelah mereka terautentikasi.
+
+### 1.1 Autentikasi (`/auth`)
 
 *Endpoint* yang berkaitan dengan registrasi, *login*, dan *logout* pengguna.
 
-### 1.1. Registrasi Terapis
+#### 1.1.1 Registrasi Terapis
 
 -   **Method:**  `POST`
 
@@ -70,7 +74,7 @@ Dokumen ini menjelaskan semua *endpoint* API yang tersedia untuk backend aplikas
 
     -   `500 Internal Server Error`: Kesalahan *server*.
 
-### 1.2. Login Terapis
+#### 1.1.2 Login Terapis
 
 -   **Method:**  `POST`
 
@@ -114,7 +118,7 @@ Dokumen ini menjelaskan semua *endpoint* API yang tersedia untuk backend aplikas
 
     -   `401 Unauthorized`: *Identifier* atau *password* salah.
 
-### 1.3. Registrasi Pasien
+#### 1.1.3 Registrasi Pasien
 
 -   **Method:**  `POST`
 
@@ -157,7 +161,7 @@ Dokumen ini menjelaskan semua *endpoint* API yang tersedia untuk backend aplikas
 
 -   **Response Error:** Sama seperti registrasi terapis.
 
-### 1.4. Login Pasien
+#### 1.1.4 Login Pasien
 
 -   **Method:**  `POST`
 
@@ -197,7 +201,7 @@ Dokumen ini menjelaskan semua *endpoint* API yang tersedia untuk backend aplikas
 
 -   **Response Error:** Sama seperti *login* terapis.
 
-### 1.5. Logout
+#### 1.1.5 Logout
 
 -   **Method:**  `POST`
 
@@ -224,12 +228,529 @@ Dokumen ini menjelaskan semua *endpoint* API yang tersedia untuk backend aplikas
 
     -   `401 Unauthorized`: Token tidak valid atau tidak ada.
 
-2\. Profil Pasien (`/api/patient`)
-----------------------------------
+### 1.2 Manajemen Gerakan (`/api/gerakan`)
+
+*Endpoint* untuk terapis mengelola perpustakaan gerakan rehabilitasi, dan pasien melihat daftar gerakan.
+
+#### 1.2.1 Dapatkan Semua Gerakan
+
+-   **Method:**  `GET`
+
+-   **URL:**  `/api/gerakan/`
+
+-   **Deskripsi:** Mendapatkan daftar semua gerakan. Mendukung paginasi dan pencarian.
+
+-   **Headers:**
+
+    -   `Authorization: Bearer <TOKEN_PENGGUNA>`
+
+-   **Query Parameters (Opsional):**
+
+    -   `page` (integer, default: 1): Halaman ke-
+
+    -   `per_page` (integer, default: 10): Jumlah item per halaman
+
+    -   `search` (string): Kata kunci pencarian berdasarkan nama gerakan
+
+-   **Response Sukses (200 OK):**
+
+    ```
+    {
+      "gerakan": [
+        {
+          "id": 1,
+          "nama_gerakan": "Angkat Kaki Lurus",
+          "deskripsi": "Berbaring, angkat satu kaki lurus ke atas.",
+          "url_foto": "https://<azure_storage_account>.blob.core.windows.net/<container>/gerakan/foto/uuid_namafile.jpg",
+          "url_video": "https://<azure_storage_account>.blob.core.windows.net/<container>/gerakan/video/uuid_namafile.mp4",
+          "url_model_tflite": "https://storage.googleapis.com/<gcs_bucket_name>/trained_tflite_models/model_uuid_namafile.tflite",
+          "created_by_terapis": { "id": 1, "username": "terapis_handal", "nama_lengkap": "Dr. Terapis Handal", "email": "terapis.handal@example.com", "role": "terapis" },
+          "created_at": "2025-06-05T11:00:00.000000",
+          "updated_at": "2025-06-05T11:00:00.000000"
+        }
+      ],
+      "total_items": 1,
+      "total_pages": 1,
+      "current_page": 1
+    }
+
+    ```
+
+-   **Response Error:**  `401 Unauthorized`.
+
+#### 1.2.2 Dapatkan Detail Gerakan
+
+-   **Method:**  `GET`
+
+-   **URL:**  `/api/gerakan/<int:gerakan_id>`
+
+-   **Deskripsi:** Mendapatkan detail satu gerakan berdasarkan ID.
+
+-   **URL Parameters:**
+
+    -   `gerakan_id` (integer, wajib): ID unik gerakan.
+
+-   **Headers:**
+
+    -   `Authorization: Bearer <TOKEN_PENGGUNA>`
+
+-   **Response Sukses (200 OK):**
+
+    ```
+    {
+      "id": 1,
+      "nama_gerakan": "Angkat Kaki Lurus",
+      "deskripsi": "Berbaring, angkat satu kaki lurus ke atas.",
+      "url_foto": "https://<azure_storage_account>.blob.core.windows.net/<container>/gerakan/foto/uuid_namafile.jpg",
+      "url_video": "https://<azure_storage_account>.blob.core.windows.net/<container>/gerakan/video/uuid_namafile.mp4",
+      "url_model_tflite": "https://storage.googleapis.com/<gcs_bucket_name>/trained_tflite_models/model_uuid_namafile.tflite",
+      "created_by_terapis": { "id": 1, "username": "terapis_handal", "nama_lengkap": "Dr. Terapis Handal", "email": "terapis.handal@example.com", "role": "terapis" },
+      "created_at": "2025-06-05T11:00:00.000000",
+      "updated_at": "2025-06-05T11:00:00.000000"
+    }
+
+    ```
+
+-   **Response Error:**
+
+    -   `401 Unauthorized`.
+
+    -   `404 Not Found`: Gerakan tidak ditemukan.
+
+### 1.3 Penyajian File Media (`/media/gerakan`)
+
+*Endpoint* ini tidak memerlukan autentikasi JWT agar file bisa diakses langsung oleh tag `<img>` atau `<video>` di frontend/mobile.
+
+#### 1.3.1 Sajikan Foto Gerakan
+
+-   **Method:**  `GET`
+
+-   **URL:**  `/media/gerakan/foto/<path:filename>`
+
+-   **Deskripsi:** Mengakses file foto gerakan. `filename` adalah nama unik file yang disimpan (misal: `uuid_namafile.jpg`).
+
+-   **Response:** File gambar.
+
+#### 1.3.2 Sajikan Video Gerakan
+
+-   **Method:**  `GET`
+
+-   **URL:**  `/media/gerakan/video/<path:filename>`
+
+-   **Deskripsi:** Mengakses file video gerakan. `filename` adalah nama unik file yang disimpan (misal: `uuid_namafile.mp4`).
+
+-   **Response:** File video.
+
+#### 1.3.3 Sajikan Model `.tflite` Gerakan
+
+-   **Method:**  `GET`
+
+-   **URL:**  `/media/gerakan/model_tflite/<path:filename>`
+
+-   **Deskripsi:** Mengakses file model `.tflite` gerakan. `filename` adalah nama unik file yang disimpan (misal: `model_uuid_namafile.tflite`).
+
+-   **Response:** File `.tflite`.
+
+#### 1.3.4 Dapatkan Detail Laporan
+
+-   **Method:**  `GET`
+
+-   **URL:**  `/api/laporan/<int:laporan_id>`
+
+-   **Deskripsi:** Mendapatkan detail satu laporan rehabilitasi. Bisa diakses oleh pasien pemilik atau terapis yang terkait dengan program.
+
+-   **URL Parameters:**
+
+    -   `laporan_id` (integer, wajib): ID unik laporan.
+
+-   **Headers:**
+
+    -   `Authorization: Bearer <TOKEN_PENGGUNA>`
+
+-   **Response Sukses (200 OK):**
+
+    ```
+    {
+      "laporan_id": 1,
+      "pasien_info": { "id": 2, "username": "pasien_rajin", "nama_lengkap": "Budi Pasien Rajin", "email": "pasien.rajin@example.com", "role": "pasien" },
+      "program_info": { "id": 1, "nama_program": "Rehabilitasi Lutut Minggu ke-2", "nama_terapis_program": "Dr. Terapis Handal" },
+      "tanggal_program_direncanakan": "2025-06-12",
+      "tanggal_laporan_disubmit": "2025-06-12",
+      "total_waktu_rehabilitasi_string": "30:00",
+      "total_waktu_rehabilitasi_detik": 1800,
+      "catatan_pasien_laporan": "Semua gerakan terasa baik, sedikit pegal.",
+      "detail_hasil_gerakan": [
+        {
+          "laporan_gerakan_id": 1,
+          "nama_gerakan": "Angkat Kaki Lurus",
+          "jumlah_repetisi_direncanakan": 12,
+          "jumlah_sempurna": 10,
+          "jumlah_tidak_sempurna": 2,
+          "jumlah_tidak_terdeteksi": 0,
+          "waktu_aktual_per_gerakan_detik": 300
+        }
+        // ... detail gerakan lainnya ...
+      ],
+      "summary_total_hitungan": { "sempurna": 25, "tidak_sempurna": 2, "tidak_terdeteksi": 0 },
+      "created_at": "2025-06-12T10:00:00.000000"
+    }
+
+    ```
+
+-   **Response Error:**
+
+    -   `401 Unauthorized`: Token tidak valid.
+
+    -   `403 Forbidden`: Pengguna tidak berhak melihat laporan ini.
+
+    -   `404 Not Found`: Laporan tidak ditemukan.
+
+#### 1.3.5 Dapatkan Detail Program Spesifik
+
+-   **Method:**  `GET`
+
+-   **URL:**  `/api/program/<int:program_id>`
+
+-   **Deskripsi:** Mendapatkan detail program berdasarkan ID-nya. Bisa diakses oleh terapis pembuat atau pasien penerima.
+
+-   **URL Parameters:**
+
+    -   `program_id` (integer, wajib): ID unik program.
+
+-   **Headers:**
+
+    -   `Authorization: Bearer <TOKEN_PENGGUNA>`
+
+-   **Response Sukses (200 OK):**
+
+    ```
+    {
+      "msg": "Detail program berhasil diambil",
+      "program": {
+        "id": 1,
+        "nama_program": "Rehabilitasi Lutut Minggu ke-2",
+        "tanggal_program": "2025-06-12",
+        "catatan_terapis": "Fokus pada penguatan quadrisep.",
+        "status": "belum_dimulai",
+        "terapis": { "id": 1, "username": "terapis_handal", "nama_lengkap": "Dr. Terapis Handal", "email": "terapis.handal@example.com", "role": "terapis" },
+        "pasien": { "id": 2, "username": "pasien_rajin", "nama_lengkap": "Budi Pasien Rajin", "email": "pasien.rajin@example.com", "role": "pasien" },
+        "list_gerakan_direncanakan": [
+          // ... (data gerakan lengkap) ...
+        ],
+        "created_at": "2025-06-12T09:00:00.000000",
+        "updated_at": "2025-06-12T09:00:00.000000",
+        "laporan_terkait": null
+      }
+    }
+
+    ```
+
+-   **Response Error:**
+
+    -   `401 Unauthorized`: Token tidak valid.
+
+    -   `403 Forbidden`: Pengguna tidak berhak mengakses program ini.
+
+    -   `404 Not Found`: Program tidak ditemukan.
+
+#### 1.3.6 Update Status Program
+
+-   **Method:**  `PUT`
+
+-   **URL:**  `/api/program/<int:program_id>/update-status`
+
+-   **Deskripsi:** Terapis atau sistem mengubah status program (misal, dari `belum_dimulai` ke `berjalan`, atau dari `berjalan` ke `dibatalkan`). Pasien juga bisa mengubah ke `berjalan`.
+
+-   **URL Parameters:**
+
+    -   `program_id` (integer, wajib): ID unik program.
+
+-   **Headers:**
+
+    -   `Authorization: Bearer <TOKEN_PENGGUNA>`
+
+    -   `Content-Type: application/json`
+
+-   **Request Body:**
+
+    ```
+    {
+      "status": "berjalan" // Pilihan: "belum_dimulai", "berjalan", "selesai", "dibatalkan"
+    }
+
+    ```
+
+-   **Response Sukses (200 OK):**
+
+    ```
+    {
+      "msg": "Status program berhasil diubah menjadi 'berjalan'",
+      "program": {
+        "id": 1,
+        "nama_program": "Rehabilitasi Lutut Minggu ke-2",
+        "tanggal_program": "2025-06-12",
+        "status": "berjalan"
+      }
+    }
+
+    ```
+
+-   **Response Error:**
+
+    -   `400 Bad Request`: Status baru tidak disediakan atau tidak valid.
+
+    -   `401 Unauthorized`: Token tidak valid.
+
+    -   `403 Forbidden`: Pengguna tidak berhak mengubah status ini (misal: pasien mencoba mengubah ke `selesai`).
+
+    -   `404 Not Found`: Program tidak ditemukan.
+
+#### 1.3.7 Dapatkan Summary Monitoring Pasien
+
+-   **Method:**  `GET`
+
+-   **URL:**  `/api/monitoring/summary/pasien/<int:pasien_id>`
+
+-   **Deskripsi:** Mendapatkan data ringkasan lengkap untuk *dashboard* monitoring pasien (KPI, tren, distribusi hasil gerakan, catatan terbaru, dan riwayat aktivitas).
+
+-   **URL Parameters:**
+
+    -   `pasien_id` (integer, wajib): ID unik pasien.
+
+-   **Headers:**
+
+    -   `Authorization: Bearer <TOKEN_PENGGUNA>` (Terapis atau Pasien pemilik)
+
+-   **Response Sukses (200 OK):**
+
+    ```
+    {
+      "pasien_info": {
+        "nama_lengkap": "Budi Pasien Rajin",
+        "id_pasien_string": "PAS002",
+        "user_id": 2,
+        "jenis_kelamin": "Laki-laki",
+        "tanggal_lahir": "15-05-1990",
+        "diagnosis": "Post-stroke ringan, pemulihan baik",
+        "catatan_tambahan_pasien": "Perlu perhatian pada gerakan motorik halus.",
+        "url_foto_profil": "https://<azure_storage_account>.blob.core.windows.net/<container>/profil/foto/uuid_namafile.jpg",
+        "total_points": 1500,
+        "highest_badge_info": {
+          "id": 1,
+          "name": "Bintang Perunggu",
+          "description": "Diberikan untuk mencapai 1000 poin.",
+          "point_threshold": 1000,
+          "image_url": "https://<azure_storage_account>.blob.core.windows.net/<container>/badges/bronze_star.png",
+          "created_at": "2025-01-01T00:00:00.000000",
+          "updated_at": "2025-01-01T00:00:00.000000"
+        }
+      },
+      "summary_kpi": {
+        "total_sesi_selesai": 5,
+        "rata_rata_akurasi_persen": 85,
+        "rata_rata_durasi_string": "25m 30s",
+        "rata_rata_durasi_detik": 1530,
+        "frekuensi_latihan_per_minggu": 3.5
+      },
+      "trends_chart": {
+        "akurasi_7_sesi_terakhir": {
+          "labels": ["29 Mei", "31 Mei", "02 Jun", "04 Jun", "05 Jun"],
+          "data": [80, 82, 85, 88, 90]
+        },
+        "durasi_7_sesi_terakhir": {
+          "labels": ["29 Mei", "31 Mei", "02 Jun", "04 Jun", "05 Jun"],
+          "data": [30, 28, 25, 26, 24]
+        }
+      },
+      "distribusi_hasil_gerakan_total": {
+        "labels": ["Sempurna", "Tidak Sempurna", "Tidak Terdeteksi"],
+        "data": [250, 30, 15]
+      },
+      "catatan_observasi_terbaru": [
+        {
+          "tanggal": "2025-06-05",
+          "catatan": "Pasien menunjukkan peningkatan signifikan minggu ini.",
+          "sumber": "Terapis (Dr. Terapis Handal) - Program: Rehabilitasi Lutut Minggu ke-2"
+        },
+        {
+          "tanggal": "2025-06-04",
+          "catatan": "Latihan hari ini terasa lebih ringan.",
+          "sumber": "Pasien - Laporan Program: Rehabilitasi Lutut Minggu ke-2"
+        }
+      ],
+      "riwayat_aktivitas_monitoring": [
+        {
+          "tanggal_program": "2025-06-05",
+          "nama_program": "Rehabilitasi Lutut Minggu ke-2",
+          "status_program": "selesai",
+          "laporan_id": 1,
+          "keterangan_sesi": "Semua gerakan terasa baik, sedikit pegal."
+        }
+      ]
+    }
+
+    ```
+
+-   **Response Error:**
+
+    -   `401 Unauthorized`: Token tidak valid.
+
+    -   `403 Forbidden`: Pengguna tidak berhak melihat *summary* ini.
+
+    -   `404 Not Found`: Pasien tidak ditemukan atau belum ada laporan yang selesai.
+
+#### 1.3.8 Dapatkan Leaderboard
+
+-   **Method:**  `GET`
+
+-   **URL:**  `/api/gamification/leaderboard`
+
+-   **Deskripsi:** Endpoint untuk mendapatkan leaderboard pasien berdasarkan total poin. Dapat diakses oleh terapis dan pasien.
+
+-   **Headers:**
+
+    -   `Authorization: Bearer <TOKEN_PENGGUNA>`
+
+-   **Query Parameters (Opsional):**
+
+    -   `page` (integer, default: 1): Halaman hasil leaderboard.
+
+    -   `per_page` (integer, default: 10): Jumlah item per halaman.
+
+-   **Response Sukses (200 OK):**
+
+    ```
+    {
+      "leaderboard": [
+        {
+          "user_id": 1,
+          "username": "pasien_hebat",
+          "nama_lengkap": "Pasien Hebat",
+          "total_points": 2500,
+          "highest_badge_info": {
+            "id": 2,
+            "name": "Bintang Perak",
+            "description": "Diberikan untuk mencapai 2000 poin.",
+            "point_threshold": 2000,
+            "image_url": "https://<azure_storage_account>.blob.core.windows.net/<container>/badges/silver_star.png",
+            "created_at": "2025-02-01T00:00:00.000000",
+            "updated_at": "2025-02-01T00:00:00.000000"
+          }
+        },
+        {
+          "user_id": 2,
+          "username": "pasien_rajin",
+          "nama_lengkap": "Budi Pasien Rajin",
+          "total_points": 1500,
+          "highest_badge_info": {
+            "id": 1,
+            "name": "Bintang Perunggu",
+            "description": "Diberikan untuk mencapai 1000 poin.",
+            "point_threshold": 1000,
+            "image_url": "https://<azure_storage_account>.blob.core.windows.net/<container>/badges/bronze_star.png",
+            "created_at": "2025-01-01T00:00:00.000000",
+            "updated_at": "2025-01-01T00:00:00.000000"
+          }
+        }
+      ],
+      "total_items": 2,
+      "total_pages": 1,
+      "current_page": 1
+    }
+
+    ```
+
+-   **Response Error:**  `401 Unauthorized`.
+
+#### 1.3.9 Dapatkan Semua Badge
+
+-   **Method:**  `GET`
+
+-   **URL:**  `/api/gamification/badges`
+
+-   **Deskripsi:** Endpoint untuk mendapatkan semua daftar badge yang tersedia. Dapat diakses oleh semua role yang terautentikasi.
+
+-   **Headers:**
+
+    -   `Authorization: Bearer <TOKEN_PENGGUNA>`
+
+-   **Response Sukses (200 OK):**
+
+    ```
+    {
+      "badges": [
+        {
+          "id": 1,
+          "name": "Bintang Perunggu",
+          "description": "Diberikan untuk mencapai 1000 poin.",
+          "point_threshold": 1000,
+          "image_url": "https://<azure_storage_account>.blob.core.windows.net/<container>/badges/bronze_star.png",
+          "created_at": "2025-01-01T00:00:00.000000",
+          "updated_at": "2025-01-01T00:00:00.000000"
+        },
+        {
+          "id": 2,
+          "name": "Bintang Perak",
+          "description": "Diberikan untuk mencapai 2000 poin.",
+          "point_threshold": 2000,
+          "image_url": "https://<azure_storage_account>.blob.core.windows.net/<container>/badges/silver_star.png",
+          "created_at": "2025-02-01T00:00:00.000000",
+          "updated_at": "2025-02-01T00:00:00.000000"
+        }
+      ]
+    }
+
+    ```
+
+-   **Response Error:**  `401 Unauthorized`.
+
+#### 1.3.10 Dapatkan Detail Badge
+
+-   **Method:**  `GET`
+
+-   **URL:**  `/api/gamification/badges/<int:badge_id>`
+
+-   **Deskripsi:** Endpoint untuk mendapatkan detail badge spesifik.
+
+-   **URL Parameters:**
+
+    -   `badge_id` (integer, wajib): ID unik badge.
+
+-   **Headers:**
+
+    -   `Authorization: Bearer <TOKEN_PENGGUNA>`
+
+-   **Response Sukses (200 OK):**
+
+    ```
+    {
+      "id": 1,
+      "name": "Bintang Perunggu",
+      "description": "Diberikan untuk mencapai 1000 poin.",
+      "point_threshold": 1000,
+      "image_url": "https://<azure_storage_account>.blob.core.windows.net/<container>/badges/bronze_star.png",
+      "created_at": "2025-01-01T00:00:00.000000",
+      "updated_at": "2025-01-01T00:00:00.000000"
+    }
+
+    ```
+
+-   **Response Error:**
+
+    -   `401 Unauthorized`.
+
+    -   `404 Not Found`: Badge tidak ditemukan.
+
+2\. API Khusus Pasien
+---------------------
+
+Bagian ini berisi *endpoint* yang khusus ditujukan untuk pengguna dengan peran Pasien.
+
+### 2.1 Profil Pasien (`/api/patient`)
 
 *Endpoint* yang berkaitan dengan data profil pasien.
 
-### 2.1. Dapatkan Profil Pasien (Saat Ini Login)
+#### 2.1.1 Dapatkan Profil Pasien (Saat Ini Login)
 
 -   **Method:**  `GET`
 
@@ -245,10 +766,12 @@ Dokumen ini menjelaskan semua *endpoint* API yang tersedia untuk backend aplikas
 
     ```
     {
-      "user_id": 2,
+      "id": 2,
       "username": "pasien_rajin",
       "nama_lengkap": "Budi Pasien Rajin",
       "email": "pasien.rajin@example.com",
+      "role": "pasien",
+      "total_points": 1500,
       "jenis_kelamin": "Laki-laki",
       "tanggal_lahir": "1990-05-15",
       "tempat_lahir": "Jakarta",
@@ -263,7 +786,16 @@ Dokumen ini menjelaskan semua *endpoint* API yang tersedia untuk backend aplikas
       "riwayat_medis": "Hipertensi terkontrol",
       "riwayat_alergi": "Tidak ada",
       "url_foto_profil": "https://<azure_storage_account>.blob.core.windows.net/<container>/profil/foto/uuid_namafile.jpg",
-      "updated_at": "2025-06-05T10:30:00.000000"
+      "updated_at": "2025-06-05T10:30:00.000000",
+      "highest_badge_info": {
+        "id": 1,
+        "name": "Bintang Perunggu",
+        "description": "Diberikan untuk mencapai 1000 poin.",
+        "point_threshold": 1000,
+        "image_url": "https://<azure_storage_account>.blob.core.windows.net/<container>/badges/bronze_star.png",
+        "created_at": "2025-01-01T00:00:00.000000",
+        "updated_at": "2025-01-01T00:00:00.000000"
+      }
     }
 
     ```
@@ -276,7 +808,7 @@ Dokumen ini menjelaskan semua *endpoint* API yang tersedia untuk backend aplikas
 
     -   `404 Not Found`: Profil pasien tidak ditemukan.
 
-### 2.2. Update Profil Pasien (Saat Ini Login)
+#### 2.1.2 Update Profil Pasien (Saat Ini Login)
 
 -   **Method:**  `PUT`
 
@@ -329,7 +861,7 @@ Dokumen ini menjelaskan semua *endpoint* API yang tersedia untuk backend aplikas
 
     -   `500 Internal Server Error`.
 
-### 2.3. Upload/Update Foto Profil Pasien
+#### 2.1.3 Upload/Update Foto Profil Pasien
 
 -   **Method:**  `POST` atau `PUT`
 
@@ -369,7 +901,7 @@ Dokumen ini menjelaskan semua *endpoint* API yang tersedia untuk backend aplikas
 
     -   `500 Internal Server Error`.
 
-### 2.4. Dapatkan Rencana Pola Makan Pasien (Tanggal Spesifik)
+#### 2.1.4 Dapatkan Rencana Pola Makan Pasien (Tanggal Spesifik)
 
 -   **Method:**  `GET`
 
@@ -415,7 +947,7 @@ Dokumen ini menjelaskan semua *endpoint* API yang tersedia untuk backend aplikas
 
     -   `404 Not Found`: Tidak ada rencana pola makan untuk tanggal ini.
 
-### 2.5. Dapatkan Program Rehabilitasi Pasien (Tampilan Kalender)
+#### 2.1.5 Dapatkan Program Rehabilitasi Pasien (Tampilan Kalender)
 
 -   **Method:**  `GET`
 
@@ -467,12 +999,310 @@ Dokumen ini menjelaskan semua *endpoint* API yang tersedia untuk backend aplikas
 
     -   `403 Forbidden`: Pengguna bukan pasien.
 
-3\. Manajemen Gerakan (`/api/gerakan`)
---------------------------------------
+### 2.2 Program Rehabilitasi (`/api/program`)
+
+*Endpoint* untuk pasien melihat programnya.
+
+#### 2.2.1 Dapatkan Program Hari Ini/Aktif
+
+-   **Method:**  `GET`
+
+-   **URL:**  `/api/program/pasien/today`
+
+-   **Deskripsi:** Pasien mendapatkan program aktif yang dijadwalkan untuk hari ini atau program aktif terdekat yang belum selesai.
+
+-   **Headers:**
+
+    -   `Authorization: Bearer <TOKEN_PASIEN>`
+
+-   **Response Sukses (200 OK):**
+
+    ```
+    {
+      "id": 1,
+      "nama_program": "Rehabilitasi Lutut Minggu ke-2",
+      "tanggal_program": "2025-06-12",
+      "catatan_terapis": "Fokus pada penguatan quadrisep.",
+      "status": "belum_dimulai",
+      "terapis": { "id": 1, "username": "terapis_handal", "nama_lengkap": "Dr. Terapis Handal", "email": "terapis.handal@example.com", "role": "terapis" },
+      "pasien": { "id": 2, "username": "pasien_rajin", "nama_lengkap": "Budi Pasien Rajin", "email": "pasien.rajin@example.com", "role": "pasien" },
+      "list_gerakan_direncanakan": [
+        // ... (data gerakan lengkap) ...
+      ],
+      "total_planned_movements": 27,
+      "estimated_total_duration_minutes": 135,
+      "created_at": "2025-06-12T09:00:00.000000",
+      "updated_at": "2025-06-12T09:00:00.000000",
+      "laporan_terkait": null
+    }
+
+    ```
+
+-   **Response Error:**
+
+    -   `401 Unauthorized`: Token tidak valid.
+
+    -   `403 Forbidden`: Pengguna bukan pasien.
+
+    -   `404 Not Found`: Jika tidak ada program aktif yang dijadwalkan.
+
+#### 2.2.2 Dapatkan Riwayat Program
+
+-   **Method:**  `GET`
+
+-   **URL:**  `/api/program/pasien/history`
+
+-   **Deskripsi:** Pasien mendapatkan riwayat semua program yang pernah di-assign kepadanya (mendukung paginasi).
+
+-   **Headers:**
+
+    -   `Authorization: Bearer <TOKEN_PASIEN>`
+
+-   **Query Parameters (Opsional):**
+
+    -   `page` (integer, default: 1)
+
+    -   `per_page` (integer, default: 10)
+
+-   **Response Sukses (200 OK):**
+
+    ```
+    {
+      "programs": [
+        {
+          "id": 1,
+          "nama_program": "Rehabilitasi Lutut Minggu ke-2",
+          "tanggal_program": "2025-06-12",
+          "catatan_terapis": "Fokus pada penguatan quadrisep.",
+          "status": "belum_dimulai",
+          "terapis": { /* ... */ },
+          "pasien": { /* ... */ },
+          "list_gerakan_direncanakan": [ /* ... */ ],
+          "total_planned_movements": 27,
+          "estimated_total_duration_minutes": 135,
+          "created_at": "2025-06-12T09:00:00.000000",
+          "updated_at": "2025-06-12T09:00:00.000000",
+          "laporan_terkait": null
+        }
+        // ... item lainnya ...
+      ],
+      "total_items": 5,
+      "total_pages": 1,
+      "current_page": 1
+    }
+
+    ```
+
+-   **Response Error:**
+
+    -   `401 Unauthorized`: Token tidak valid.
+
+    -   `403 Forbidden`: Pengguna bukan pasien.
+
+### 2.3 Laporan Hasil Rehabilitasi (`/api/laporan`)
+
+*Endpoint* untuk pasien mengirimkan hasil pelaksanaan program dan untuk melihat laporan.
+
+#### 2.3.1 Submit Laporan Hasil Rehabilitasi
+
+-   **Method:**  `POST`
+
+-   **URL:**  `/api/laporan/submit`
+
+-   **Deskripsi:** Pasien mengirimkan hasil dari program rehabilitasi yang telah dilakukan.
+
+-   **Headers:**
+
+    -   `Authorization: Bearer <TOKEN_PASIEN>`
+
+    -   `Content-Type: application/json`
+
+-   **Request Body:**
+
+    ```
+    {
+      "program_rehabilitasi_id": 1, // ID program yang dilaporkan
+      "tanggal_laporan": "2025-06-12", // Tanggal laporan disubmit/program dilakukan
+      "total_waktu_rehabilitasi_detik": 1800, // Total waktu dalam detik
+      "catatan_pasien_laporan": "Semua gerakan terasa baik, sedikit pegal.",
+      "detail_hasil_gerakan": [ // Array hasil per gerakan
+        {
+          "gerakan_id": 1, // ID gerakan dari library
+          "urutan_gerakan_dalam_program": 1, // Urutan gerakan ini saat dilakukan
+          "jumlah_sempurna": 10,
+          "jumlah_tidak_sempurna": 2,
+          "jumlah_tidak_terdeteksi": 0,
+          "waktu_aktual_per_gerakan_detik": 300 // Waktu untuk gerakan ini (detik)
+        },
+        {
+          "gerakan_id": 3,
+          "urutan_gerakan_dalam_program": 2,
+          "jumlah_sempurna": 15,
+          "jumlah_tidak_sempurna": 0,
+          "jumlah_tidak_terdeteksi": 0,
+          "waktu_aktual_per_gerakan_detik": 360
+        }
+      ]
+    }
+
+    ```
+
+-   **Response Sukses (201 Created):**
+
+    ```
+    {
+      "msg": "Laporan berhasil disubmit",
+      "data_laporan": {
+        "laporan_id": 1,
+        "pasien_info": { "id": 2, "username": "pasien_rajin", "nama_lengkap": "Budi Pasien Rajin", "email": "pasien.rajin@example.com", "role": "pasien" },
+        "program_info": { "id": 1, "nama_program": "Rehabilitasi Lutut Minggu ke-2", "nama_terapis_program": "Dr. Terapis Handal" },
+        "tanggal_program_direncanakan": "2025-06-12",
+        "tanggal_laporan_disubmit": "2025-06-12",
+        "total_waktu_rehabilitasi_string": "30:00",
+        "total_waktu_rehabilitasi_detik": 1800,
+        "catatan_pasien_laporan": "Semua gerakan terasa baik, sedikit pegal.",
+        "points_earned": 250,
+        "detail_hasil_gerakan": [
+          {
+            "laporan_gerakan_id": 1,
+            "nama_gerakan": "Angkat Kaki Lurus",
+            "jumlah_repetisi_direncanakan": 12,
+            "jumlah_sempurna": 10,
+            "jumlah_tidak_sempurna": 2,
+            "jumlah_tidak_terdeteksi": 0,
+            "waktu_aktual_per_gerakan_detik": 300
+          }
+          // ... detail gerakan lainnya ...
+        ],
+        "summary_total_hitungan": { "sempurna": 25, "tidak_sempurna": 2, "tidak_terdeteksi": 0 },
+        "created_at": "2025-06-12T10:00:00.000000"
+      }
+    }
+
+    ```
+
+-   **Response Error:**
+
+    -   `400 Bad Request`: `program_rehabilitasi_id` atau `detail_hasil_gerakan` tidak ada/tidak valid.
+
+    -   `401 Unauthorized`: Token tidak valid.
+
+    -   `403 Forbidden`: Pasien tidak berhak mengirim laporan untuk program ini.
+
+    -   `404 Not Found`: Program tidak ditemukan.
+
+    -   `409 Conflict`: Laporan untuk program ini sudah pernah disubmit.
+
+    -   `500 Internal Server Error`.
+
+#### 2.3.2 Dapatkan Riwayat Laporan
+
+-   **Method:**  `GET`
+
+-   **URL:**  `/api/laporan/pasien/history`
+
+-   **Deskripsi:** Pasien mendapatkan daftar semua laporannya (mendukung paginasi).
+
+-   **Headers:**
+
+    -   `Authorization: Bearer <TOKEN_PASIEN>`
+
+-   **Query Parameters (Opsional):**
+
+    -   `page` (integer, default: 1)
+
+    -   `per_page` (integer, default: 10)
+
+-   **Response Sukses (200 OK):**
+
+    ```
+    {
+      "laporan": [
+        {
+          "laporan_id": 1,
+          "pasien_info": { /* ... */ },
+          "program_info": { /* ... */ },
+          "tanggal_program_direncanakan": "2025-06-12",
+          "tanggal_laporan_disubmit": "2025-06-12",
+          "total_waktu_rehabilitasi_string": "30:00",
+          "total_waktu_rehabilitasi_detik": 1800,
+          "catatan_pasien_laporan": "Semua gerakan terasa baik, sedikit pegal.",
+          "points_earned": 250,
+          "detail_hasil_gerakan": [ /* ... */ ],
+          "summary_total_hitungan": { /* ... */ },
+          "created_at": "2025-06-12T10:00:00.000000"
+        }
+        // ... daftar laporan ...
+      ],
+      "total_items": 3,
+      "total_pages": 1,
+      "current_page": 1
+    }
+
+    ```
+
+-   **Response Error:**
+
+    -   `401 Unauthorized`: Token tidak valid.
+
+    -   `403 Forbidden`: Pengguna bukan pasien.
+
+### 2.4 Gamifikasi (`/api/gamification`)
+
+*Endpoint* untuk pasien melihat badge yang mereka dapatkan.
+
+#### 2.4.1 Dapatkan Badge Saya
+
+-   **Method:**  `GET`
+
+-   **URL:**  `/api/gamification/my-badges`
+
+-   **Deskripsi:** Endpoint untuk pasien melihat daftar badge yang sudah mereka dapatkan.
+
+-   **Headers:**
+
+    -   `Authorization: Bearer <TOKEN_PASIEN>`
+
+-   **Response Sukses (200 OK):**
+
+    ```
+    {
+      "my_badges": [
+        {
+          "id": 1,
+          "user_id": 2,
+          "badge_info": {
+            "id": 1,
+            "name": "Bintang Perunggu",
+            "description": "Diberikan untuk mencapai 1000 poin.",
+            "point_threshold": 1000,
+            "image_url": "https://<azure_storage_account>.blob.core.windows.net/<container>/badges/bronze_star.png",
+            "created_at": "2025-01-01T00:00:00.000000",
+            "updated_at": "2025-01-01T00:00:00.000000"
+          },
+          "awarded_at": "2025-06-15T11:00:00.000000"
+        }
+      ]
+    }
+
+    ```
+
+-   **Response Error:**
+
+    -   `401 Unauthorized`: Token tidak valid.
+
+    -   `403 Forbidden`: Pengguna bukan pasien.
+
+3\. API Khusus Terapis
+----------------------
+
+Bagian ini berisi *endpoint* yang khusus ditujukan untuk pengguna dengan peran Terapis.
+
+### 3.1 Manajemen Gerakan (`/api/gerakan`)
 
 *Endpoint* untuk terapis mengelola perpustakaan gerakan rehabilitasi.
 
-### 3.1. Buat Gerakan Baru
+#### 3.1.1 Buat Gerakan Baru
 
 -   **Method:**  `POST`
 
@@ -528,92 +1358,7 @@ Dokumen ini menjelaskan semua *endpoint* API yang tersedia untuk backend aplikas
 
     -   `500 Internal Server Error`.
 
-### 3.2. Dapatkan Semua Gerakan
-
--   **Method:**  `GET`
-
--   **URL:**  `/api/gerakan/`
-
--   **Deskripsi:** Mendapatkan daftar semua gerakan (bisa diakses terapis dan pasien). Mendukung paginasi dan pencarian.
-
--   **Headers:**
-
-    -   `Authorization: Bearer <TOKEN_PENGGUNA>`
-
--   **Query Parameters (Opsional):**
-
-    -   `page` (integer, default: 1): Halaman ke-
-
-    -   `per_page` (integer, default: 10): Jumlah item per halaman
-
-    -   `search` (string): Kata kunci pencarian berdasarkan nama gerakan
-
--   **Response Sukses (200 OK):**
-
-    ```
-    {
-      "gerakan": [
-        {
-          "id": 1,
-          "nama_gerakan": "Angkat Kaki Lurus",
-          "deskripsi": "Berbaring, angkat satu kaki lurus ke atas.",
-          "url_foto": "https://<azure_storage_account>.blob.core.windows.net/<container>/gerakan/foto/uuid_namafile.jpg",
-          "url_video": "https://<azure_storage_account>.blob.core.windows.net/<container>/gerakan/video/uuid_namafile.mp4",
-          "url_model_tflite": "https://storage.googleapis.com/<gcs_bucket_name>/trained_tflite_models/model_uuid_namafile.tflite",
-          "created_by_terapis": { "id": 1, "username": "terapis_handal", "nama_lengkap": "Dr. Terapis Handal", "email": "terapis.handal@example.com", "role": "terapis" },
-          "created_at": "2025-06-05T11:00:00.000000",
-          "updated_at": "2025-06-05T11:00:00.000000"
-        }
-      ],
-      "total_items": 1,
-      "total_pages": 1,
-      "current_page": 1
-    }
-
-    ```
-
--   **Response Error:**  `401 Unauthorized`.
-
-### 3.3. Dapatkan Detail Gerakan
-
--   **Method:**  `GET`
-
--   **URL:**  `/api/gerakan/<int:gerakan_id>`
-
--   **Deskripsi:** Mendapatkan detail satu gerakan berdasarkan ID.
-
--   **URL Parameters:**
-
-    -   `gerakan_id` (integer, wajib): ID unik gerakan.
-
--   **Headers:**
-
-    -   `Authorization: Bearer <TOKEN_PENGGUNA>`
-
--   **Response Sukses (200 OK):**
-
-    ```
-    {
-      "id": 1,
-      "nama_gerakan": "Angkat Kaki Lurus",
-      "deskripsi": "Berbaring, angkat satu kaki lurus ke atas.",
-      "url_foto": "https://<azure_storage_account>.blob.core.windows.net/<container>/gerakan/foto/uuid_namafile.jpg",
-      "url_video": "https://<azure_storage_account>.blob.core.windows.net/<container>/gerakan/video/uuid_namafile.mp4",
-      "url_model_tflite": "https://storage.googleapis.com/<gcs_bucket_name>/trained_tflite_models/model_uuid_namafile.tflite",
-      "created_by_terapis": { "id": 1, "username": "terapis_handal", "nama_lengkap": "Dr. Terapis Handal", "email": "terapis.handal@example.com", "role": "terapis" },
-      "created_at": "2025-06-05T11:00:00.000000",
-      "updated_at": "2025-06-05T11:00:00.000000"
-    }
-
-    ```
-
--   **Response Error:**
-
-    -   `401 Unauthorized`.
-
-    -   `404 Not Found`: Gerakan tidak ditemukan.
-
-### 3.4. Update Gerakan
+#### 3.1.2 Update Gerakan
 
 -   **Method:**  `PUT`
 
@@ -667,7 +1412,7 @@ Dokumen ini menjelaskan semua *endpoint* API yang tersedia untuk backend aplikas
 
     -   `500 Internal Server Error`.
 
-### 3.5. Hapus Gerakan
+#### 3.1.3 Hapus Gerakan
 
 -   **Method:**  `DELETE`
 
@@ -702,12 +1447,11 @@ Dokumen ini menjelaskan semua *endpoint* API yang tersedia untuk backend aplikas
 
     -   `500 Internal Server Error`.
 
-4\. Program Rehabilitasi (`/api/program`)
------------------------------------------
+### 3.2 Program Rehabilitasi (`/api/program`)
 
-*Endpoint* untuk terapis membuat dan meng-assign program, serta pasien melihat programnya.
+*Endpoint* untuk terapis membuat dan meng-assign program.
 
-### 4.1. Terapis: Dapatkan Daftar Pasien
+#### 3.2.1 Dapatkan Daftar Pasien
 
 -   **Method:**  `GET`
 
@@ -729,6 +1473,7 @@ Dokumen ini menjelaskan semua *endpoint* API yang tersedia untuk backend aplikas
         "nama_lengkap": "Budi Pasien Rajin",
         "email": "pasien.rajin@example.com",
         "role": "pasien",
+        "total_points": 1500,
         "foto_url": "https://<azure_storage_account>.blob.core.windows.net/<container>/profil/foto/uuid_namafile.jpg",
         "diagnosis": "Post-stroke ringan"
       },
@@ -738,6 +1483,7 @@ Dokumen ini menjelaskan semua *endpoint* API yang tersedia untuk backend aplikas
         "nama_lengkap": "Siti Pasien",
         "email": "siti.pasien@example.com",
         "role": "pasien",
+        "total_points": 500,
         "foto_url": null,
         "diagnosis": "Belum ada diagnosis"
       }
@@ -751,13 +1497,13 @@ Dokumen ini menjelaskan semua *endpoint* API yang tersedia untuk backend aplikas
 
     -   `403 Forbidden`: Pengguna bukan terapis.
 
-### 4.2. Terapis: Dapatkan Informasi Pasien untuk Konteks Program
+#### 3.2.2 Dapatkan Informasi Pasien untuk Konteks Program
 
 -   **Method:**  `GET`
 
 -   **URL:**  `/api/program/patient-info/<int:pasien_id>`
 
--   **Deskripsi:** Terapis mendapatkan informasi dasar pasien (termasuk foto, diagnosis, jenis kelamin, dan tanggal lahir) dalam konteks modul program.
+-   **Deskripsi:** Terapis mendapatkan informasi dasar pasien (termasuk foto, diagnosis, jenis kelamin, tanggal lahir, dan total poin) dalam konteks modul program.
 
 -   **URL Parameters:**
 
@@ -776,6 +1522,7 @@ Dokumen ini menjelaskan semua *endpoint* API yang tersedia untuk backend aplikas
       "nama_lengkap": "Budi Pasien Rajin",
       "email": "pasien.rajin@example.com",
       "role": "pasien",
+      "total_points": 1500,
       "foto_url": "https://<azure_storage_account>.blob.core.windows.net/<container>/profil/foto/uuid_namafile.jpg",
       "diagnosis": "Post-stroke ringan",
       "jenis_kelamin": "Laki-laki",
@@ -792,7 +1539,7 @@ Dokumen ini menjelaskan semua *endpoint* API yang tersedia untuk backend aplikas
 
     -   `404 Not Found`: Pasien tidak ditemukan.
 
-### 4.3. Terapis: Buat & Assign Program Baru
+#### 3.2.3 Buat & Assign Program Baru
 
 -   **Method:**  `POST`
 
@@ -844,7 +1591,7 @@ Dokumen ini menjelaskan semua *endpoint* API yang tersedia untuk backend aplikas
             "url_foto": "...",
             "url_video": "...",
             "url_model_tflite": "...",
-            "created_by_terapis": { /* ... */ },
+            "created_by_terapis": { "id": 1, "username": "terapis_handal", "nama_lengkap": "Dr. Terapis Handal", "email": "terapis.handal@example.com", "role": "terapis" },
             "created_at": "...",
             "updated_at": "...",
             "jumlah_repetisi_direncanakan": 12,
@@ -853,6 +1600,8 @@ Dokumen ini menjelaskan semua *endpoint* API yang tersedia untuk backend aplikas
           }
           // ... gerakan lainnya ...
         ],
+        "total_planned_movements": 27,
+        "estimated_total_duration_minutes": 135,
         "created_at": "2025-06-12T09:00:00.000000",
         "updated_at": "2025-06-12T09:00:00.000000",
         "laporan_terkait": null
@@ -873,99 +1622,7 @@ Dokumen ini menjelaskan semua *endpoint* API yang tersedia untuk backend aplikas
 
     -   `500 Internal Server Error`.
 
-### 4.4. Pasien: Dapatkan Program Hari Ini/Aktif
-
--   **Method:**  `GET`
-
--   **URL:**  `/api/program/pasien/today`
-
--   **Deskripsi:** Pasien mendapatkan program aktif yang dijadwalkan untuk hari ini atau program aktif terdekat yang belum selesai.
-
--   **Headers:**
-
-    -   `Authorization: Bearer <TOKEN_PASIEN>`
-
--   **Response Sukses (200 OK):**
-
-    ```
-    {
-      "id": 1,
-      "nama_program": "Rehabilitasi Lutut Minggu ke-2",
-      "tanggal_program": "2025-06-12",
-      "catatan_terapis": "Fokus pada penguatan quadrisep.",
-      "status": "belum_dimulai",
-      "terapis": { "id": 1, "username": "terapis_handal", "nama_lengkap": "Dr. Terapis Handal", "email": "terapis.handal@example.com", "role": "terapis" },
-      "pasien": { "id": 2, "username": "pasien_rajin", "nama_lengkap": "Budi Pasien Rajin", "email": "pasien.rajin@example.com", "role": "pasien" },
-      "list_gerakan_direncanakan": [
-        // ... (data gerakan lengkap) ...
-      ],
-      "created_at": "2025-06-12T09:00:00.000000",
-      "updated_at": "2025-06-12T09:00:00.000000",
-      "laporan_terkait": null
-    }
-
-    ```
-
--   **Response Error:**
-
-    -   `401 Unauthorized`: Token tidak valid.
-
-    -   `403 Forbidden`: Pengguna bukan pasien.
-
-    -   `404 Not Found`: Jika tidak ada program aktif yang dijadwalkan.
-
-### 4.5. Pasien: Dapatkan Riwayat Program
-
--   **Method:**  `GET`
-
--   **URL:**  `/api/program/pasien/history`
-
--   **Deskripsi:** Pasien mendapatkan riwayat semua program yang pernah di-assign kepadanya (mendukung paginasi).
-
--   **Headers:**
-
-    -   `Authorization: Bearer <TOKEN_PASIEN>`
-
--   **Query Parameters (Opsional):**
-
-    -   `page` (integer, default: 1)
-
-    -   `per_page` (integer, default: 10)
-
--   **Response Sukses (200 OK):**
-
-    ```
-    {
-      "programs": [
-        {
-          "id": 1,
-          "nama_program": "Rehabilitasi Lutut Minggu ke-2",
-          "tanggal_program": "2025-06-12",
-          "catatan_terapis": "Fokus pada penguatan quadrisep.",
-          "status": "belum_dimulai",
-          "terapis": { /* ... */ },
-          "pasien": { /* ... */ },
-          "list_gerakan_direncanakan": [ /* ... */ ],
-          "created_at": "2025-06-12T09:00:00.000000",
-          "updated_at": "2025-06-12T09:00:00.000000",
-          "laporan_terkait": null
-        }
-        // ... item lainnya ...
-      ],
-      "total_items": 5,
-      "total_pages": 1,
-      "current_page": 1
-    }
-
-    ```
-
--   **Response Error:**
-
-    -   `401 Unauthorized`: Token tidak valid.
-
-    -   `403 Forbidden`: Pengguna bukan pasien.
-
-### 4.6. Terapis: Dapatkan Program yang Di-assign ke Pasien Tertentu
+#### 3.2.4 Dapatkan Program yang Di-assign ke Pasien Tertentu
 
 -   **Method:**  `GET`
 
@@ -1002,6 +1659,8 @@ Dokumen ini menjelaskan semua *endpoint* API yang tersedia untuk backend aplikas
           "terapis": { /* ... */ },
           "pasien": { /* ... */ },
           "list_gerakan_direncanakan": [ /* ... */ ],
+          "total_planned_movements": 27,
+          "estimated_total_duration_minutes": 135,
           "created_at": "2025-06-12T09:00:00.000000",
           "updated_at": "2025-06-12T09:00:00.000000",
           "laporan_terkait": null
@@ -1023,308 +1682,11 @@ Dokumen ini menjelaskan semua *endpoint* API yang tersedia untuk backend aplikas
 
     -   `404 Not Found`: Pasien tidak ditemukan.
 
-### 4.7. Dapatkan Detail Program Spesifik
+### 3.3 Laporan Hasil Rehabilitasi (`/api/laporan`)
 
--   **Method:**  `GET`
+*Endpoint* untuk terapis melihat laporan.
 
--   **URL:**  `/api/program/<int:program_id>`
-
--   **Deskripsi:** Mendapatkan detail program berdasarkan ID-nya. Bisa diakses oleh terapis pembuat atau pasien penerima.
-
--   **URL Parameters:**
-
-    -   `program_id` (integer, wajib): ID unik program.
-
--   **Headers:**
-
-    -   `Authorization: Bearer <TOKEN_PENGGUNA>`
-
--   **Response Sukses (200 OK):**
-
-    ```
-    {
-      "msg": "Detail program berhasil diambil",
-      "program": {
-        "id": 1,
-        "nama_program": "Rehabilitasi Lutut Minggu ke-2",
-        "tanggal_program": "2025-06-12",
-        "catatan_terapis": "Fokus pada penguatan quadrisep.",
-        "status": "belum_dimulai",
-        "terapis": { "id": 1, "username": "terapis_handal", "nama_lengkap": "Dr. Terapis Handal", "email": "terapis.handal@example.com", "role": "terapis" },
-        "pasien": { "id": 2, "username": "pasien_rajin", "nama_lengkap": "Budi Pasien Rajin", "email": "pasien.rajin@example.com", "role": "pasien" },
-        "list_gerakan_direncanakan": [
-          // ... (data gerakan lengkap) ...
-        ],
-        "created_at": "2025-06-12T09:00:00.000000",
-        "updated_at": "2025-06-12T09:00:00.000000",
-        "laporan_terkait": null
-      }
-    }
-
-    ```
-
--   **Response Error:**
-
-    -   `401 Unauthorized`: Token tidak valid.
-
-    -   `403 Forbidden`: Pengguna tidak berhak mengakses program ini.
-
-    -   `404 Not Found`: Program tidak ditemukan.
-
-### 4.8. Update Status Program
-
--   **Method:**  `PUT`
-
--   **URL:**  `/api/program/<int:program_id>/update-status`
-
--   **Deskripsi:** Terapis atau sistem mengubah status program (misal, dari `belum_dimulai` ke `berjalan`, atau dari `berjalan` ke `dibatalkan`). Pasien juga bisa mengubah ke `berjalan`.
-
--   **URL Parameters:**
-
-    -   `program_id` (integer, wajib): ID unik program.
-
--   **Headers:**
-
-    -   `Authorization: Bearer <TOKEN_PENGGUNA>`
-
-    -   `Content-Type: application/json`
-
--   **Request Body:**
-
-    ```
-    {
-      "status": "berjalan" // Pilihan: "belum_dimulai", "berjalan", "selesai", "dibatalkan"
-    }
-
-    ```
-
--   **Response Sukses (200 OK):**
-
-    ```
-    {
-      "msg": "Status program berhasil diubah menjadi 'berjalan'",
-      "program": {
-        "id": 1,
-        "nama_program": "Rehabilitasi Lutut Minggu ke-2",
-        "tanggal_program": "2025-06-12",
-        "status": "berjalan"
-      }
-    }
-
-    ```
-
--   **Response Error:**
-
-    -   `400 Bad Request`: Status baru tidak disediakan atau tidak valid.
-
-    -   `401 Unauthorized`: Token tidak valid.
-
-    -   `403 Forbidden`: Pengguna tidak berhak mengubah status ini (misal: pasien mencoba mengubah ke `selesai`).
-
-    -   `404 Not Found`: Program tidak ditemukan.
-
-5\. Laporan Hasil Rehabilitasi (`/api/laporan`)
------------------------------------------------
-
-*Endpoint* untuk pasien mengirimkan hasil pelaksanaan program dan untuk melihat laporan.
-
-### 5.1. Pasien: Submit Laporan Hasil Rehabilitasi
-
--   **Method:**  `POST`
-
--   **URL:**  `/api/laporan/submit`
-
--   **Deskripsi:** Pasien mengirimkan hasil dari program rehabilitasi yang telah dilakukan.
-
--   **Headers:**
-
-    -   `Authorization: Bearer <TOKEN_PASIEN>`
-
-    -   `Content-Type: application/json`
-
--   **Request Body:**
-
-    ```
-    {
-      "program_rehabilitasi_id": 1, // ID program yang dilaporkan
-      "tanggal_laporan": "2025-06-12", // Tanggal laporan disubmit/program dilakukan
-      "total_waktu_rehabilitasi_detik": 1800, // Total waktu dalam detik
-      "catatan_pasien_laporan": "Semua gerakan terasa baik, sedikit pegal.",
-      "detail_hasil_gerakan": [ // Array hasil per gerakan
-        {
-          "gerakan_id": 1, // ID gerakan dari library
-          "urutan_gerakan_dalam_program": 1, // Urutan gerakan ini saat dilakukan
-          "jumlah_sempurna": 10,
-          "jumlah_tidak_sempurna": 2,
-          "jumlah_tidak_terdeteksi": 0,
-          "waktu_aktual_per_gerakan_detik": 300 // Waktu untuk gerakan ini (detik)
-        },
-        {
-          "gerakan_id": 3,
-          "urutan_gerakan_dalam_program": 2,
-          "jumlah_sempurna": 15,
-          "jumlah_tidak_sempurna": 0,
-          "jumlah_tidak_terdeteksi": 0,
-          "waktu_aktual_per_gerakan_detik": 360
-        }
-      ]
-    }
-
-    ```
-
--   **Response Sukses (201 Created):**
-
-    ```
-    {
-      "msg": "Laporan rehabilitasi berhasil disubmit",
-      "data_laporan": {
-        "laporan_id": 1,
-        "pasien_info": { "id": 2, "username": "pasien_rajin", "nama_lengkap": "Budi Pasien Rajin", "email": "pasien.rajin@example.com", "role": "pasien" },
-        "program_info": { "id": 1, "nama_program": "Rehabilitasi Lutut Minggu ke-2", "nama_terapis_program": "Dr. Terapis Handal" },
-        "tanggal_program_direncanakan": "2025-06-12",
-        "tanggal_laporan_disubmit": "2025-06-12",
-        "total_waktu_rehabilitasi_string": "30:00",
-        "total_waktu_rehabilitasi_detik": 1800,
-        "catatan_pasien_laporan": "Semua gerakan terasa baik, sedikit pegal.",
-        "detail_hasil_gerakan": [
-          {
-            "laporan_gerakan_id": 1,
-            "nama_gerakan": "Angkat Kaki Lurus",
-            "jumlah_repetisi_direncanakan": 12,
-            "jumlah_sempurna": 10,
-            "jumlah_tidak_sempurna": 2,
-            "jumlah_tidak_terdeteksi": 0,
-            "waktu_aktual_per_gerakan_detik": 300
-          }
-          // ... detail gerakan lainnya ...
-        ],
-        "summary_total_hitungan": { "sempurna": 25, "tidak_sempurna": 2, "tidak_terdeteksi": 0 },
-        "created_at": "2025-06-12T10:00:00.000000"
-      }
-    }
-
-    ```
-
--   **Response Error:**
-
-    -   `400 Bad Request`: `program_rehabilitasi_id` atau `detail_hasil_gerakan` tidak ada/tidak valid.
-
-    -   `401 Unauthorized`: Token tidak valid.
-
-    -   `403 Forbidden`: Pasien tidak berhak mengirim laporan untuk program ini.
-
-    -   `404 Not Found`: Program tidak ditemukan.
-
-    -   `409 Conflict`: Laporan untuk program ini sudah pernah disubmit.
-
-    -   `500 Internal Server Error`.
-
-### 5.2. Dapatkan Detail Laporan
-
--   **Method:**  `GET`
-
--   **URL:**  `/api/laporan/<int:laporan_id>`
-
--   **Deskripsi:** Mendapatkan detail satu laporan rehabilitasi. Bisa diakses oleh pasien pemilik atau terapis yang terkait dengan program.
-
--   **URL Parameters:**
-
-    -   `laporan_id` (integer, wajib): ID unik laporan.
-
--   **Headers:**
-
-    -   `Authorization: Bearer <TOKEN_PENGGUNA>`
-
--   **Response Sukses (200 OK):**
-
-    ```
-    {
-      "laporan_id": 1,
-      "pasien_info": { "id": 2, "username": "pasien_rajin", "nama_lengkap": "Budi Pasien Rajin", "email": "pasien.rajin@example.com", "role": "pasien" },
-      "program_info": { "id": 1, "nama_program": "Rehabilitasi Lutut Minggu ke-2", "nama_terapis_program": "Dr. Terapis Handal" },
-      "tanggal_program_direncanakan": "2025-06-12",
-      "tanggal_laporan_disubmit": "2025-06-12",
-      "total_waktu_rehabilitasi_string": "30:00",
-      "total_waktu_rehabilitasi_detik": 1800,
-      "catatan_pasien_laporan": "Semua gerakan terasa baik, sedikit pegal.",
-      "detail_hasil_gerakan": [
-        {
-          "laporan_gerakan_id": 1,
-          "nama_gerakan": "Angkat Kaki Lurus",
-          "jumlah_repetisi_direncanakan": 12,
-          "jumlah_sempurna": 10,
-          "jumlah_tidak_sempurna": 2,
-          "jumlah_tidak_terdeteksi": 0,
-          "waktu_aktual_per_gerakan_detik": 300
-        }
-        // ... detail gerakan lainnya ...
-      ],
-      "summary_total_hitungan": { "sempurna": 25, "tidak_sempurna": 2, "tidak_terdeteksi": 0 },
-      "created_at": "2025-06-12T10:00:00.000000"
-    }
-
-    ```
-
--   **Response Error:**
-
-    -   `401 Unauthorized`: Token tidak valid.
-
-    -   `403 Forbidden`: Pengguna tidak berhak melihat laporan ini.
-
-    -   `404 Not Found`: Laporan tidak ditemukan.
-
-### 5.3. Pasien: Dapatkan Riwayat Laporan
-
--   **Method:**  `GET`
-
--   **URL:**  `/api/laporan/pasien/history`
-
--   **Deskripsi:** Pasien mendapatkan daftar semua laporannya (mendukung paginasi).
-
--   **Headers:**
-
-    -   `Authorization: Bearer <TOKEN_PASIEN>`
-
--   **Query Parameters (Opsional):**
-
-    -   `page` (integer, default: 1)
-
-    -   `per_page` (integer, default: 10)
-
--   **Response Sukses (200 OK):**
-
-    ```
-    {
-      "laporan": [
-        {
-          "laporan_id": 1,
-          "pasien_info": { /* ... */ },
-          "program_info": { /* ... */ },
-          "tanggal_program_direncanakan": "2025-06-12",
-          "tanggal_laporan_disubmit": "2025-06-12",
-          "total_waktu_rehabilitasi_string": "30:00",
-          "total_waktu_rehabilitasi_detik": 1800,
-          "catatan_pasien_laporan": "Semua gerakan terasa baik, sedikit pegal.",
-          "detail_hasil_gerakan": [ /* ... */ ],
-          "summary_total_hitungan": { /* ... */ },
-          "created_at": "2025-06-12T10:00:00.000000"
-        }
-        // ... daftar laporan ...
-      ],
-      "total_items": 3,
-      "total_pages": 1,
-      "current_page": 1
-    }
-
-    ```
-
--   **Response Error:**
-
-    -   `401 Unauthorized`: Token tidak valid.
-
-    -   `403 Forbidden`: Pengguna bukan pasien.
-
-### 5.4. Terapis: Dapatkan Riwayat Laporan Pasien Tertentu
+#### 3.3.1 Dapatkan Riwayat Laporan Pasien Tertentu
 
 -   **Method:**  `GET`
 
@@ -1361,6 +1723,7 @@ Dokumen ini menjelaskan semua *endpoint* API yang tersedia untuk backend aplikas
           "total_waktu_rehabilitasi_string": "30:00",
           "total_waktu_rehabilitasi_detik": 1800,
           "catatan_pasien_laporan": "Semua gerakan terasa baik, sedikit pegal.",
+          "points_earned": 250,
           "detail_hasil_gerakan": [ /* ... */ ],
           "summary_total_hitungan": { /* ... */ },
           "created_at": "2025-06-12T10:00:00.000000"
@@ -1382,102 +1745,11 @@ Dokumen ini menjelaskan semua *endpoint* API yang tersedia untuk backend aplikas
 
     -   `404 Not Found`: Pasien tidak ditemukan.
 
-6\. Monitoring Pasien (`/api/monitoring`)
------------------------------------------
-
-*Endpoint* untuk terapis (atau pasien sendiri) melihat ringkasan dan tren progres rehabilitasi.
-
-### 6.1. Dapatkan Summary Monitoring Pasien
-
--   **Method:**  `GET`
-
--   **URL:**  `/api/monitoring/summary/pasien/<int:pasien_id>`
-
--   **Deskripsi:** Mendapatkan data ringkasan lengkap untuk *dashboard* monitoring pasien (KPI, tren, distribusi hasil gerakan, catatan terbaru, dan riwayat aktivitas).
-
--   **URL Parameters:**
-
-    -   `pasien_id` (integer, wajib): ID unik pasien.
-
--   **Headers:**
-
-    -   `Authorization: Bearer <TOKEN_PENGGUNA>` (Terapis atau Pasien pemilik)
-
--   **Response Sukses (200 OK):**
-
-    ```
-    {
-      "pasien_info": {
-        "nama_lengkap": "Budi Pasien Rajin",
-        "id_pasien_string": "PAS002",
-        "user_id": 2,
-        "jenis_kelamin": "Laki-laki",
-        "tanggal_lahir": "15-05-1990",
-        "diagnosis": "Post-stroke ringan, pemulihan baik",
-        "catatan_tambahan_pasien": "Perlu perhatian pada gerakan motorik halus.",
-        "url_foto_profil": "https://<azure_storage_account>.blob.core.windows.net/<container>/profil/foto/uuid_namafile.jpg"
-      },
-      "summary_kpi": {
-        "total_sesi_selesai": 5,
-        "rata_rata_akurasi_persen": 85, // Dalam persen
-        "rata_rata_durasi_string": "25m 30s", // Format MMm SSs atau HHh MMm SSs
-        "rata_rata_durasi_detik": 1530,
-        "frekuensi_latihan_per_minggu": 3.5
-      },
-      "trends_chart": {
-        "akurasi_7_sesi_terakhir": {
-          "labels": ["29 Mei", "31 Mei", "02 Jun", "04 Jun", "05 Jun"],
-          "data": [80, 82, 85, 88, 90] // Persentase akurasi
-        },
-        "durasi_7_sesi_terakhir": {
-          "labels": ["29 Mei", "31 Mei", "02 Jun", "04 Jun", "05 Jun"],
-          "data": [30, 28, 25, 26, 24] // Durasi dalam menit
-        }
-      },
-      "distribusi_hasil_gerakan_total": {
-        "labels": ["Sempurna", "Tidak Sempurna", "Tidak Terdeteksi"],
-        "data": [250, 30, 15] // Jumlah total hitungan
-      },
-      "catatan_observasi_terbaru": [
-        {
-          "tanggal": "2025-06-05",
-          "catatan": "Pasien menunjukkan peningkatan signifikan minggu ini.",
-          "sumber": "Terapis (Dr. Terapis Handal) - Program: Rehabilitasi Lutut Minggu ke-2"
-        },
-        {
-          "tanggal": "2025-06-04",
-          "catatan": "Latihan hari ini terasa lebih ringan.",
-          "sumber": "Pasien - Laporan Program: Rehabilitasi Lutut Minggu ke-2"
-        }
-      ],
-      "riwayat_aktivitas_monitoring": [ // Ini adalah daftar program yang telah selesai (LaporanRehabilitasi)
-        {
-          "tanggal_program": "2025-06-05",
-          "nama_program": "Rehabilitasi Lutut Minggu ke-2",
-          "status_program": "selesai",
-          "laporan_id": 1,
-          "keterangan_sesi": "Semua gerakan terasa baik, sedikit pegal."
-        }
-        // ... item lainnya ...
-      ]
-    }
-
-    ```
-
--   **Response Error:**
-
-    -   `401 Unauthorized`: Token tidak valid.
-
-    -   `403 Forbidden`: Pengguna tidak berhak melihat *summary* ini.
-
-    -   `404 Not Found`: Pasien tidak ditemukan atau belum ada laporan yang selesai.
-
-7\. Manajemen Pola Makan oleh Terapis (`/api/terapis`)
-------------------------------------------------------
+### 3.4 Manajemen Pola Makan oleh Terapis (`/api/terapis`)
 
 *Endpoint* khusus untuk terapis mengelola pola makan pasien.
 
-### 7.1. Terapis: Dapatkan Detail Pasien Saya
+#### 3.4.1 Dapatkan Detail Pasien Saya
 
 -   **Method:**  `GET`
 
@@ -1519,7 +1791,7 @@ Dokumen ini menjelaskan semua *endpoint* API yang tersedia untuk backend aplikas
 
     -   `403 Forbidden`: Pengguna bukan terapis.
 
-### 7.2. Terapis: Dapatkan Ringkasan Dashboard
+#### 3.4.2 Dapatkan Ringkasan Dashboard
 
 -   **Method:**  `GET`
 
@@ -1549,7 +1821,22 @@ Dokumen ini menjelaskan semua *endpoint* API yang tersedia untuk backend aplikas
           "execution_date": "2025-06-12",
           "status": "berjalan",
           "catatan_terapis": "Fokus pada kekuatan sendi.",
-          "movements_details": [ /* ... */ ]
+          "movements_details": [
+            {
+              "id": 1,
+              "nama_gerakan": "Angkat Kaki Lurus",
+              "deskripsi": "Berbaring, angkat satu kaki lurus ke atas.",
+              "url_foto": "...",
+              "url_video": "...",
+              "url_model_tflite": "...",
+              "created_by_terapis": { "id": 1, "username": "terapis_handal", "nama_lengkap": "Dr. Terapis Handal", "email": "terapis.handal@example.com", "role": "terapis" },
+              "created_at": "...",
+              "updated_at": "...",
+              "jumlah_repetisi_direncanakan": 12,
+              "urutan_dalam_program": 1,
+              "program_gerakan_detail_id": 1
+            }
+          ]
         },
         {
           "id": 4,
@@ -1576,7 +1863,7 @@ Dokumen ini menjelaskan semua *endpoint* API yang tersedia untuk backend aplikas
 
     -   `403 Forbidden`: Pengguna bukan terapis.
 
-### 7.3. Terapis: Buat Rencana Pola Makan
+#### 3.4.3 Buat Rencana Pola Makan
 
 -   **Method:**  `POST`
 
@@ -1641,7 +1928,7 @@ Dokumen ini menjelaskan semua *endpoint* API yang tersedia untuk backend aplikas
 
     -   `500 Internal Server Error`.
 
-### 7.4. Terapis: Perbarui Rencana Pola Makan
+#### 3.4.4 Perbarui Rencana Pola Makan
 
 -   **Method:**  `PUT`
 
@@ -1702,7 +1989,7 @@ Dokumen ini menjelaskan semua *endpoint* API yang tersedia untuk backend aplikas
 
     -   `500 Internal Server Error`.
 
-### 7.5. Terapis: Hapus Rencana Pola Makan
+#### 3.4.5 Hapus Rencana Pola Makan
 
 -   **Method:**  `DELETE`
 
@@ -1737,7 +2024,7 @@ Dokumen ini menjelaskan semua *endpoint* API yang tersedia untuk backend aplikas
 
     -   `500 Internal Server Error`.
 
-### 7.6. Terapis: Dapatkan Pola Makan Pasien pada Tanggal Tertentu
+#### 3.4.6 Dapatkan Pola Makan Pasien pada Tanggal Tertentu
 
 -   **Method:**  `GET`
 
@@ -1785,7 +2072,7 @@ Dokumen ini menjelaskan semua *endpoint* API yang tersedia untuk backend aplikas
 
     -   `404 Not Found`: Pola makan tidak ditemukan untuk pasien dan tanggal tersebut.
 
-### 7.7. Terapis: Dapatkan Semua Pola Makan untuk Pasien Tertentu
+#### 3.4.7 Dapatkan Semua Pola Makan untuk Pasien Tertentu
 
 -   **Method:**  `GET`
 
@@ -1843,37 +2130,155 @@ Dokumen ini menjelaskan semua *endpoint* API yang tersedia untuk backend aplikas
 
     -   `403 Forbidden`: Pengguna bukan terapis.
 
-8\. Penyajian File Media (`/media/gerakan`)
--------------------------------------------
+### 3.5 Gamifikasi (`/api/gamification`)
 
-*Endpoint* ini tidak memerlukan autentikasi JWT agar file bisa diakses langsung oleh tag `<img>` atau `<video>` di frontend/mobile.
+*Endpoint* untuk terapis mengelola badge.
 
-### 8.1. Sajikan Foto Gerakan
+#### 3.5.1 Buat Badge Baru
 
--   **Method:**  `GET`
+-   **Method:**  `POST`
 
--   **URL:**  `/media/gerakan/foto/<path:filename>`
+-   **URL:**  `/api/gamification/badges`
 
--   **Deskripsi:** Mengakses file foto gerakan. `filename` adalah nama unik file yang disimpan (misal: `uuid_namafile.jpg`).
+-   **Deskripsi:** Endpoint untuk terapis membuat badge baru. Membutuhkan nama, deskripsi, ambang batas poin, dan file gambar.
 
--   **Response:** File gambar.
+-   **Headers:**
 
-### 8.2. Sajikan Video Gerakan
+    -   `Authorization: Bearer <TOKEN_TERAPIS>`
 
--   **Method:**  `GET`
+    -   `Content-Type: multipart/form-data`
 
--   **URL:**  `/media/gerakan/video/<path:filename>`
+-   **Request Body:**  `form-data`
 
--   **Deskripsi:** Mengakses file video gerakan. `filename` adalah nama unik file yang disimpan (misal: `uuid_namafile.mp4`).
+    -   `name` (teks, wajib): "Bintang Perunggu"
 
--   **Response:** File video.
+    -   `description` (teks, opsional): "Diberikan untuk mencapai 1000 poin."
 
-### 8.3. Sajikan Model `.tflite` Gerakan
+    -   `point_threshold` (integer, wajib): 1000
 
--   **Method:**  `GET`
+    -   `image` (file, wajib): (file gambar `.png`, `.jpg`, dll.)
 
--   **URL:**  `/media/gerakan/model_tflite/<path:filename>`
+-   **Response Sukses (201 Created):**
 
--   **Deskripsi:** Mengakses file model `.tflite` gerakan. `filename` adalah nama unik file yang disimpan (misal: `model_uuid_namafile.tflite`).
+    ```
+    {
+      "msg": "Badge berhasil dibuat",
+      "badge": {
+        "id": 1,
+        "name": "Bintang Perunggu",
+        "description": "Diberikan untuk mencapai 1000 poin.",
+        "point_threshold": 1000,
+        "image_url": "https://<azure_storage_account>.blob.core.windows.net/<container>/badges/bronze_star.png",
+        "created_at": "2025-01-01T00:00:00.000000",
+        "updated_at": "2025-01-01T00:00:00.000000"
+      }
+    }
 
--   **Response:** File `.tflite`.
+    ```
+
+-   **Response Error:**
+
+    -   `400 Bad Request`: Data tidak lengkap, format ambang batas poin salah, atau file gambar tidak ditemukan.
+
+    -   `401 Unauthorized`: Token tidak valid.
+
+    -   `403 Forbidden`: Pengguna bukan terapis.
+
+    -   `409 Conflict`: Nama badge atau ambang batas poin sudah ada.
+
+    -   `500 Internal Server Error`.
+
+#### 3.5.2 Perbarui Badge
+
+-   **Method:**  `PUT`
+
+-   **URL:**  `/api/gamification/badges/<int:badge_id>`
+
+-   **Deskripsi:** Endpoint untuk terapis memperbarui detail badge yang sudah ada. Memungkinkan perubahan nama, deskripsi, ambang batas poin, dan gambar.
+
+-   **URL Parameters:**
+
+    -   `badge_id` (integer, wajib): ID unik badge.
+
+-   **Headers:**
+
+    -   `Authorization: Bearer <TOKEN_TERAPIS>`
+
+    -   `Content-Type: multipart/form-data`
+
+-   **Request Body:**  `form-data` (kirim *field* yang ingin diubah, termasuk file jika ingin mengganti)
+
+    -   `name` (teks, opsional)
+
+    -   `description` (teks, opsional)
+
+    -   `point_threshold` (integer, opsional)
+
+    -   `image` (file, opsional)
+
+-   **Response Sukses (200 OK):**
+
+    ```
+    {
+      "msg": "Badge berhasil diperbarui",
+      "badge": {
+        "id": 1,
+        "name": "Bintang Perunggu",
+        "description": "Diberikan untuk mencapai 1000 poin (Diperbarui).",
+        "point_threshold": 1000,
+        "image_url": "https://<azure_storage_account>.blob.core.windows.net/<container>/badges/bronze_star_updated.png",
+        "created_at": "2025-01-01T00:00:00.000000",
+        "updated_at": "2025-06-15T10:00:00.000000"
+      }
+    }
+
+    ```
+
+-   **Response Error:**
+
+    -   `400 Bad Request`: Format ambang batas poin salah.
+
+    -   `401 Unauthorized`: Token tidak valid.
+
+    -   `403 Forbidden`: Pengguna bukan terapis.
+
+    -   `404 Not Found`: Badge tidak ditemukan.
+
+    -   `409 Conflict`: Nama badge atau ambang batas poin sudah ada (jika diubah).
+
+    -   `500 Internal Server Error`.
+
+#### 3.5.3 Hapus Badge
+
+-   **Method:**  `DELETE`
+
+-   **URL:**  `/api/gamification/badges/<int:badge_id>`
+
+-   **Deskripsi:** Endpoint untuk terapis menghapus badge.
+
+-   **URL Parameters:**
+
+    -   `badge_id` (integer, wajib): ID unik badge.
+
+-   **Headers:**
+
+    -   `Authorization: Bearer <TOKEN_TERAPIS>`
+
+-   **Response Sukses (200 OK):**
+
+    ```
+    {
+      "msg": "Badge berhasil dihapus"
+    }
+
+    ```
+
+-   **Response Error:**
+
+    -   `401 Unauthorized`: Token tidak valid.
+
+    -   `403 Forbidden`: Pengguna bukan terapis.
+
+    -   `404 Not Found`: Badge tidak ditemukan.
+
+    -   `500 Internal Server Error`.
